@@ -1,20 +1,21 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type User struct {
 	gorm.Model
-	tag          string
-	email        string
-	username     string
-	passwordHash string
+	Tag          string `gorm:"type:varchar(20)"`
+	Email        string `gorm:"type:varchar(100)"`
+	Username     string `gorm:"type:varchar(20);unique_index"`
+	PasswordHash string `gorm:"type:varchar(100)"`
 
-	profilePic UserMedia
-	coverPic   UserMedia
-	followers  []User
-	following  []User
-	posts      []Post
-	likes      []Like
-	replies    []Reply
-	reposts    []Repost
+	ProfilePicID *Media  `gorm:"polymorphic:Owner;polymorphicValue:user"`
+	CoverPicID   *Media  `gorm:"polymorphic:Owner;polymorphicValue:user"`
+	Followers    []*User `gorm:"many2many:follwing_followers;"`
+	Posts        []*Post `gorm:"polymorphic:Owner;polymorphicValue:user"`
+	Likes        []*Like
+	Replies      []*Reply
+	Reposts      []*Repost
 }

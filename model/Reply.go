@@ -6,8 +6,8 @@ import (
 
 type Reply struct {
 	gorm.Model
-	content string
-	user    User
-	post    Post
-	media   []PostMedia
+	Content string   `gorm:"default:''"`
+	UserID  uint     //User.ID
+	PostID  uint     //Post.ID
+	Media   []*Media `gorm:"polymorphic:Owner;polymorphicValue:reply"`
 }

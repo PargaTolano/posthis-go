@@ -6,6 +6,6 @@ import (
 
 type Repost struct {
 	gorm.Model
-	user User
-	post Post
+	UserID uint //User.ID
+	PostID uint //Post.ID
 }

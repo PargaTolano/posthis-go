@@ -1,6 +1,6 @@
 package viewmodel
 
 type ErrorVW struct {
-	code    int
-	message string
+	Code    int
+	Message string
 }

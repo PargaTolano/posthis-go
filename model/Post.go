@@ -6,10 +6,11 @@ import (
 
 type Post struct {
 	gorm.Model
-	content string
-	user    User
-	media   []PostMedia
-	likes   []Like
-	replies []Reply
-	reposts []Repost
+	Content   string `gorm:"default:''"`
+	OwnerID   uint
+	OwnerType string
+	Media     []*Media `gorm:"polymorphic:Owner;polymorphicValue:post"`
+	Likes     []*Like
+	Replies   []*Reply
+	Reposts   []*Repost
 }
