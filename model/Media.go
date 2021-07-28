@@ -11,5 +11,14 @@ type Media struct {
 }
 
 func (media *Media) GetPath(scheme, host string) string {
-	return scheme + "://" + host + "/path/" + media.Name
+
+	if len(scheme) == 0 {
+		scheme = "http"
+	}
+
+	if len(host) == 0 {
+		host = "localhost:4000"
+	}
+
+	return scheme + "://" + host + "/static/" + media.Name
 }

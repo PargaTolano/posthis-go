@@ -9,8 +9,8 @@ type Post struct {
 	Content   string `gorm:"default:''"`
 	OwnerID   uint
 	OwnerType string
-	Media     []*Media `gorm:"polymorphic:Owner;polymorphicValue:post"`
-	Likes     []*Like
-	Replies   []*Reply
-	Reposts   []*Repost
+	Media     []*Media  `gorm:"polymorphic:Owner;polymorphicValue:post"`
+	Likes     []*Like   `gorm:"foreignKey:PostID"`
+	Replies   []*Reply  `gorm:"foreignKey:PostID"`
+	Reposts   []*Repost `gorm:"foreignKey:PostID"`
 }

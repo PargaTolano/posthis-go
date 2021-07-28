@@ -9,7 +9,6 @@ import (
 	. "posthis/utils"
 	"strconv"
 
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -19,91 +18,17 @@ import (
 //Validation
 
 //API handlers
-func GetPosts() http.Handler {
+func GetReplies() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		var (
-			posts    []Post
-			response SuccesVM
-		)
-
-		db, err := ConnectToDb()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		db.AutoMigrate(&Post{})
-
-		db.Find(&posts)
-
-		response = SuccesVM{Data: posts, Message: "Retrieved Posts Sucessfully"}
-
-		marshal, err := json.Marshal(response)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-
-		w.Header().Add("Content-Type", "application/json")
-		w.Write([]byte(marshal))
-	})
-}
-
-func GetPost() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		var (
-			post         Post
-			postDetailVm PostDetailVM
-			response     SuccesVM
-		)
-		vars := mux.Vars(r)
-		tid, err := strconv.ParseUint(vars["id"], 10, 32)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		id := uint(tid)
-
-		db, err := ConnectToDb()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		db.Preload("Media").First(&post, id)
-		postDetailVm = PostDetailVM{ID: post.ID, Content: post.Content, Media: []string{}}
-
-		for _, v := range post.Media {
-			postDetailVm.Media = append(postDetailVm.Media, v.GetPath(r.URL.Scheme, r.Header.Get("Host")))
-		}
-
-		response = SuccesVM{Data: postDetailVm, Message: "Retrieved Posts Sucessfully"}
-
-		marshal, err := json.Marshal(response)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-
-		w.Header().Add("Content-Type", "application/json")
-		w.Write([]byte(marshal))
-	})
-}
-
-func CreatePost() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var (
-			media    []*Media
-			user     User
 			post     Post
 			response SuccesVM
 		)
 
-		content := r.FormValue("content")
+		vars := mux.Vars(r)
+
+		id := vars["id"]
 
 		db, err := ConnectToDb()
 		if err != nil {
@@ -111,14 +36,80 @@ func CreatePost() http.Handler {
 			return
 		}
 
+		db.AutoMigrate(&Post{}, &Reply{})
+
+		db.First(&post, id)
+		if db.Error != nil {
+			http.Error(w, db.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response = SuccesVM{Data: post.Replies, Message: "Replies retrieved sucessfully"}
+
+		marshal, err := json.Marshal(response)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.Write([]byte(marshal))
+	})
+}
+
+func CreateReply() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		var (
+			user     User
+			post     Post
+			reply    Reply
+			media    []*Media
+			response SuccesVM
+		)
+
+		vars := mux.Vars(r)
+
+		tuid, err := strconv.ParseUint(vars["userId"], 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		userId := uint(tuid)
+
+		tpid, err := strconv.ParseUint(vars["postId"], 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		postId := uint(tpid)
+
+		db, err := ConnectToDb()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		db.First(&user, context.Get(r, "userId"))
+		err = db.AutoMigrate(&User{}, &Post{}, &Reply{}, &Media{})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		//10mb total
+		db.First(&user, userId)
+		if db.Error != nil {
+			http.Error(w, db.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		db.First(&post, postId)
+		if db.Error != nil {
+			http.Error(w, db.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		//User and Post exist, so proceed to check media
 		r.ParseMultipartForm(10 << 20)
 
 		formdata := r.MultipartForm
@@ -133,10 +124,12 @@ func CreatePost() http.Handler {
 
 		db.CreateInBatches(&media, len(media))
 
-		post = Post{Content: content, Media: media}
+		reply = Reply{Content: r.FormValue("content"), Media: media, UserID: userId, PostID: postId}
 
-		db.Create(&post)
-		db.Model(&user).Association("Posts").Append(&post)
+		//Once it works add everything to the database
+		db.Create(&reply)
+		db.Model(&user).Association("replies").Append(&reply)
+		db.Model(&post).Association("replies").Append(&reply)
 
 		response = SuccesVM{Data: post, Message: "Post created successfully"}
 
@@ -151,20 +144,16 @@ func CreatePost() http.Handler {
 	})
 }
 
-func UpdatePost() http.Handler {
+func UpdateReply() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		//vars := mux.Vars(r)
+		//id := vars["id"]
 	})
 }
 
-func DeletePost() http.Handler {
+func DeleteReply() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	})
-}
-
-func GetFeed() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		//vars := mux.Vars(r)
+		//id := vars["id"]
 	})
 }
