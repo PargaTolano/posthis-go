@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	. "posthis/db"
 	. "posthis/model"
@@ -32,8 +33,6 @@ func GetPosts() http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		db.AutoMigrate(&Post{})
 
 		db.Find(&posts)
 
@@ -94,6 +93,8 @@ func GetPost() http.Handler {
 	})
 }
 
+//Takes its data from a multipart-form
+//The key files holds the media to upload to the database and associate to this post
 func CreatePost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
@@ -151,15 +152,126 @@ func CreatePost() http.Handler {
 	})
 }
 
+//Takes its data from a multipart-form
+//The key files holds the media to upload to the database and associate to this post
+//The key json contains a json file that gives info on which media files are deleted
+//and the new text content of the post
 func UpdatePost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var (
+			media    []*Media
+			post     Post
+			model    PostUpdateVM
+			response SuccesVM
+		)
 
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		db, err := ConnectToDb()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		//10mb total
+		r.ParseMultipartForm(10 << 20)
+
+		formdata := r.MultipartForm
+
+		files := formdata.File["files"]
+		jsonData := formdata.File["json"]
+
+		db.First(&post, id)
+
+		if len(jsonData) == 1 {
+			file, err := jsonData[0].Open()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			bytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			err = json.Unmarshal(bytes, &model)
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if len(model.Deleted) > 0 {
+				db.Delete(&Media{}, model.Deleted)
+			}
+
+			post.Content = model.Content
+
+		} else if len(jsonData) > 1 {
+			http.Error(w, "Can only receive one json data file", http.StatusBadRequest)
+			return
+		}
+
+		if len(files) >= 1 {
+			err = UploadMultipleFiles(files, &media)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			db.CreateInBatches(&media, len(media))
+			db.Model(&post).Association("Media").Append(media)
+		}
+
+		db.Save(&post)
+
+		response = SuccesVM{Data: post, Message: "Post updated successfully"}
+
+		marshal, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(marshal)
 	})
 }
 
 func DeletePost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		var (
+			post Post
+		)
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		db, err := ConnectToDb()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tid, err := strconv.ParseUint(id, 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		db.Delete(&post, uint(tid))
+
+		marshal, err := json.Marshal(SuccesVM{Data: post, Message: "Post deleted successfully"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(marshal)
 	})
 }
 

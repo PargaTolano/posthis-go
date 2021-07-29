@@ -1,6 +1,6 @@
 package viewmodel
 
-type CreateUserVM struct {
+type UserUpdateVM struct {
 	Tag      string
 	Email    string
 	Username string

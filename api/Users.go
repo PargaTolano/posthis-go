@@ -2,12 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"posthis/auth"
 	. "posthis/db"
 	. "posthis/model"
 	. "posthis/model/viewmodel"
 	. "posthis/utils"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -16,11 +18,11 @@ import (
 //Used ViewModels: CreateUserVM,
 
 //Validation
-func validateCreateModel(model *CreateUserVM) error {
+func validateCreateModel(model *UserCreateVM) error {
 	return nil
 }
 
-func validateUpdateModel(model *CreateUserVM) error {
+func validateUpdateModel(model *UserCreateVM) error {
 	return nil
 }
 
@@ -38,8 +40,6 @@ func GetUsers() http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		db.AutoMigrate(&User{})
 
 		db.Find(&users)
 
@@ -60,7 +60,7 @@ func GetUsers() http.Handler {
 func CreateUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
-			model    CreateUserVM
+			model    UserCreateVM
 			user     User
 			response SuccesVM
 		)
@@ -92,8 +92,6 @@ func CreateUser() http.Handler {
 			return
 		}
 
-		db.AutoMigrate(&User{})
-
 		user = User{Tag: model.Tag, Email: model.Email, Username: model.Username, PasswordHash: hash}
 		db.Create(&user)
 
@@ -115,28 +113,132 @@ func UpdateUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		var (
-			user User
+			user     User
+			model    UserUpdateVM
+			response SuccesVM
 		)
 
 		vars := mux.Vars(r)
+		id, err := strconv.ParseUint(vars["id"], 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
 		db, err := ConnectToDb()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		db.AutoMigrate(&User{})
-		db.First(&user, vars["id"])
+		db.First(&user, uint(id))
 		if db.Error != nil {
 			http.Error(w, db.Error.Error(), http.StatusInternalServerError)
 		}
 
+		r.ParseMultipartForm(10 << 20)
+
+		formdata := r.MultipartForm
+
+		profilePic := formdata.File["profilePic"]
+		coverPic := formdata.File["coverPic"]
+		jsonData := formdata.File["json"]
+
+		if len(profilePic) == 1 {
+			var media []*Media
+			err = UploadMultipleFiles(profilePic, &media)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			db.Create(&media[0])
+			user.ProfilePic = media[0]
+		} else if len(profilePic) > 1 {
+			http.Error(w, "Can only receive one profilePic data file", http.StatusBadRequest)
+			return
+		}
+
+		if len(coverPic) == 1 {
+			var media []*Media
+			err = UploadMultipleFiles(coverPic, &media)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			db.Create(&media[0])
+			user.CoverPic = media[0]
+		} else if len(coverPic) > 1 {
+			http.Error(w, "Can only receive one coverPic data file", http.StatusBadRequest)
+			return
+		}
+
+		if len(jsonData) == 1 {
+			file, err := jsonData[0].Open()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			bytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			err = json.Unmarshal(bytes, &model)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if model.Tag != "" {
+				user.Tag = model.Tag
+			}
+
+			if model.Email != "" {
+				user.Email = model.Email
+			}
+
+			if model.Username != "" {
+				user.Username = model.Username
+			}
+		} else if len(coverPic) > 1 {
+			http.Error(w, "Can only receive one json data file", http.StatusBadRequest)
+			return
+		}
+
+		db.Save(&user)
+
+		response = SuccesVM{Data: user, Message: "User updated successfully"}
+		marshal, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(marshal)
 	})
 }
 
 func DeleteUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		vars := mux.Vars(r)
+		id, err := strconv.ParseUint(vars["id"], 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		db, err := ConnectToDb()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		db.Delete(&User{}, uint(id))
+		if db.Error != nil {
+			http.Error(w, db.Error.Error(), http.StatusInternalServerError)
+		}
 	})
 }
 

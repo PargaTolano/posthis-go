@@ -19,6 +19,10 @@ func initRoutes() {
 
 	r.UseEncodedPath()
 
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./pages/index.html")
+	})
+
 	fileServer := http.FileServer(http.Dir("./static/"))
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", fileServer))
 
@@ -42,6 +46,15 @@ func initRoutes() {
 	r.Handle("/api/replies-create/{userId}/{postId}", auth.TokenAuthMiddleware(api.CreateReply()))
 	r.Handle("/api/replies-update/{id}", auth.TokenAuthMiddleware(api.UpdateReply()))
 	r.Handle("/api/replies-delete/{id}", auth.TokenAuthMiddleware(api.DeleteUser()))
+
+	r.Handle("/api/likes/{id}", auth.TokenAuthMiddleware(api.GetLikes()))
+	r.Handle("/api/likes-create/{userId}/{postId}", auth.TokenAuthMiddleware(api.CreateLike()))
+	r.Handle("/api/likes-delete/{id}", auth.TokenAuthMiddleware(api.DeleteLike()))
+
+	r.Handle("/api/follows/{id}", auth.TokenAuthMiddleware(api.GetFollows()))
+	r.Handle("/api/follows-following/{id}", auth.TokenAuthMiddleware(api.GetFollowing()))
+	r.Handle("/api/follows-create/{id}", auth.TokenAuthMiddleware(api.CreateFollow()))
+	r.Handle("/api/follows-delete/{id}", auth.TokenAuthMiddleware(api.DeleteFollow()))
 
 	http.Handle("/", r)
 }

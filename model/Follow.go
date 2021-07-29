@@ -6,6 +6,6 @@ import (
 
 type Follow struct {
 	gorm.Model
-	FollowerUserID uint //User.ID
-	FollowedUserID uint //User.ID
+	FollowerID uint //User.ID
+	FollowedID uint //User.ID
 }
