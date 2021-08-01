@@ -1,8 +1,8 @@
 package viewmodel
 
 type MediaVM struct {
-	ID      uint
-	Name    string
-	Mime    string
-	IsVideo bool
+	ID      uint   `json:"id,omitempty"`
+	Path    string `json:"path,omitempty"`
+	Mime    string `json:"mime,omitempty"`
+	IsVideo bool   `json:"is,omitempty"`
 }

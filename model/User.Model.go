@@ -135,7 +135,7 @@ func (UserModel) DeleteUser(id uint) error {
 }
 
 //return auth token info and error if there is one
-func (UserModel) Login(model UserLoginVm) (interface{}, error) {
+func (um UserModel) Login(model UserLoginVm) (interface{}, error) {
 
 	user := User{}
 
@@ -162,12 +162,19 @@ func (UserModel) Login(model UserLoginVm) (interface{}, error) {
 		return nil, err
 	}
 
-	tokens := map[string]string{
-		"access_token":  ts.AccessToken,
-		"refresh_token": ts.RefreshToken,
+	ppp := ""
+	if user.ProfilePic != nil {
+		ppp = user.ProfilePic.GetPath(um.Scheme, um.Host)
 	}
 
-	return tokens, nil
+	data := map[string]interface{}{
+		"id":             user.ID,
+		"username":       user.Username,
+		"profilePicPath": ppp,
+		"token":          ts.AccessToken,
+	}
+
+	return data, nil
 }
 
 //return auth token info and error if there is one

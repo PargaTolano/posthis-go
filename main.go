@@ -9,13 +9,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
-func initRoutes() {
+func initRoutes() http.Handler {
 
 	r := mux.NewRouter()
-
-	mux.CORSMethodMiddleware(r)
 
 	r.UseEncodedPath()
 
@@ -39,6 +38,7 @@ func initRoutes() {
 	r.Handle("/api/posts-feed/{id}/{offset}/{limit}", auth.TokenAuthMiddleware(controller.GetUserFeed())).Methods("GET")
 
 	r.Handle("/api/users", auth.TokenAuthMiddleware(controller.GetUsers())).Methods("GET")
+	r.Handle("/api/user/{id}", auth.TokenAuthMiddleware(controller.GetUser())).Methods("GET")
 	r.Handle("/api/users-create", controller.CreateUser()).Methods("POST")
 	r.Handle("/api/users-update/{id}", auth.TokenAuthMiddleware(controller.UpdateUser())).Methods("PUT")
 	r.Handle("/api/users-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteUser())).Methods("DELETE")
@@ -65,7 +65,13 @@ func initRoutes() {
 	r.Handle("/api/follows-create/{id}", auth.TokenAuthMiddleware(controller.CreateFollow())).Methods("POST")
 	r.Handle("/api/follows-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteFollow())).Methods("DELETE")
 
+	//headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	//originsOk := handlers.AllowedOrigins([]string{os.Getenv("ORIGIN_ALLOWED")})
+	//methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+
 	http.Handle("/", r)
+
+	return r
 }
 
 func main() {
@@ -79,8 +85,10 @@ func main() {
 	//Init gorm
 	db.InitDB()
 
-	initRoutes()
+	mux := initRoutes()
+
+	handler := cors.AllowAll().Handler(mux)
 
 	log.Println("Starting server on :4000")
-	log.Fatal(http.ListenAndServe(":4000", nil))
+	log.Fatal(http.ListenAndServe(":4000", handler))
 }

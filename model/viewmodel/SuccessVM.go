@@ -1,6 +1,6 @@
 package viewmodel
 
 type SuccesVM struct {
-	Data    interface{}
-	Message string
+	Data    interface{} `json:"data,omitempty"`
+	Message string      `json:"message,omitempty"`
 }

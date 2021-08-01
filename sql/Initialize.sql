@@ -12,8 +12,7 @@ CREATE PROCEDURE SP_GET_FEED
 	IN in_limit int
 )
 BEGIN
-
-	DROP TABLE IF EXISTS temp_FOLLOWED_IDS;
+DROP TABLE IF EXISTS temp_FOLLOWED_IDS;
 	CREATE TABLE temp_FOLLOWED_IDS(id int) 
     AS
     SELECT u.id AS ID FROM users u
@@ -27,45 +26,49 @@ BEGIN
     JOIN reposts r 	ON r.post_id = p.id
     WHERE r.user_id in (SELECT id FROM temp_FOLLOWED_IDS);
     
-    CREATE TEMPORARY TABLE temp_FINAL_POSTS(
-		ID 						bigint,
-        PublisherID 			bigint,
-        PublisherUserName  		varchar(20),
-        PublisherTag 			varchar(20),
-        PublisherProfilePic 	longtext,
-        ReposterUserName 		varchar(20),
-        ReposterTag				varchar(20),
-        Date					datetime(3),
-        Content					varchar(191),
-        RepostID				bigint
-    );
-    
-    INSERT INTO temp_FINAL_POSTS
+    CREATE TEMPORARY TABLE temp_FINAL_POSTS
+    AS
     SELECT 
-		p.id 							ID,
-		u1.id 							PublisherID,
-        u1.username						PublisherUserName,
-        u1.tag      					PublisherTag,
-        COALESCE(m.name, '')      		PublisherProfilePic,
-		COALESCE(u2.username, 0)		ReposterID,
-        COALESCE(u2.tag, '')				ReposterTag,
+		p.id 						ID,
+		u1.id 						PublisherID,
+        u1.username					PublisherUserName,
+        u1.tag      				PublisherTag,
+        COALESCE(m.name, '')		PublisherProfilePic,
+		COALESCE(u2.username, '') 	ReposterID,
+        COALESCE(u2.tag, '')		ReposterTag,
 		IF( COALESCE(p.id in (SELECT id FROM temp_REPOSTED_IDS), FALSE), r.created_at, p.created_at) Date,
-        p.Content 						Content,
-		COALESCE(r.id, 0) 				RepostID
+        p.Content 					Content,
+		COALESCE(r.id, 0) 			RepostID,
+        p.id in (SELECT id FROM temp_REPOSTED_IDS) 						IsRepost,
+        COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE) 	IsFollowedRepost,
+        u1.id in (SELECT id from temp_FOLLOWED_IDS) 					IsFollowedPost
     FROM posts p
     JOIN users u1 ON p.owner_id = u1.id
 	LEFT JOIN media m  ON m.owner_id = u1.id
     LEFT JOIN reposts r ON p.id = r.post_id
     LEFT JOIN users u2 ON r.user_id = u2.id
-    ORDER BY Date DESC, COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE),u1.id in (SELECT id from temp_FOLLOWED_IDS) desc
+    GROUP BY p.id
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
     LIMIT in_offset, in_limit;
     
-    SELECT * 
-    FROM temp_FINAL_POSTS;
+    SELECT 
+		ID, 
+		PublisherID, 
+		PublisherUserName, 
+		PublisherTag, 
+		PublisherProfilePic, 
+		ReposterID, 
+		ReposterTag, 
+		Date, 
+		Content, 
+		RepostID
+    FROM temp_FINAL_POSTS
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc;
     
 	SELECT 
 		ID
-    FROM temp_FINAL_POSTS;
+    FROM temp_FINAL_POSTS
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc;
     
     DROP TABLE temp_FINAL_POSTS;
 END $$
@@ -94,46 +97,50 @@ BEGIN
     JOIN reposts r 	ON r.post_id = p.id
     WHERE r.user_id in (SELECT id FROM temp_FOLLOWED_IDS);
     
-    CREATE TEMPORARY TABLE temp_FINAL_POSTS(
-		ID 						bigint,
-        PublisherID 			bigint,
-        PublisherUserName  		varchar(20),
-        PublisherTag 			varchar(20),
-        PublisherProfilePic 	longtext,
-        ReposterUserName 		varchar(20),
-        ReposterTag				varchar(20),
-        Date					datetime(3),
-        Content					varchar(191),
-        RepostID				bigint
-    );
-    
-    INSERT INTO temp_FINAL_POSTS
+    CREATE TEMPORARY TABLE temp_FINAL_POSTS
+    AS
     SELECT 
-		p.id 				ID,
-		u1.id 				PublisherID,
-        u1.username			PublisherUserName,
-        u1.tag      		PublisherTag,
-        m.name      		PublisherProfilePic,
-		u2.username 		ReposterID,
-        u2.tag				ReposterTag,
-		IF( p.id in (SELECT id FROM temp_REPOSTED_IDS), r.created_at, p.created_at) Date,
-        p.Content 			Content,
-		r.id 				RepostID
+		p.id 						ID,
+		u1.id 						PublisherID,
+        u1.username					PublisherUserName,
+        u1.tag      				PublisherTag,
+        COALESCE(m.name, '')		PublisherProfilePic,
+		COALESCE(u2.username, '') 	ReposterID,
+        COALESCE(u2.tag, '')		ReposterTag,
+		IF( COALESCE(p.id in (SELECT id FROM temp_REPOSTED_IDS), FALSE), r.created_at, p.created_at) Date,
+        p.Content 					Content,
+		COALESCE(r.id, 0) 			RepostID,
+        p.id in (SELECT id FROM temp_REPOSTED_IDS) 						IsRepost,
+        COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE) 	IsFollowedRepost,
+        u1.id in (SELECT id from temp_FOLLOWED_IDS) 					IsFollowedPost
     FROM posts p
     JOIN users u1 ON p.owner_id = u1.id
 	LEFT JOIN media m  ON m.owner_id = u1.id
     LEFT JOIN reposts r ON p.id = r.post_id
     LEFT JOIN users u2 ON r.user_id = u2.id
-	WHERE IF( p.id in (SELECT id FROM temp_REPOSTED_IDS), u2.id, u1.id) = in_poster_id AND ( p.id in (SELECT id FROM temp_REPOSTED_IDS))
-    ORDER BY Date DESC, COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE) desc,u1.id in (SELECT id from temp_FOLLOWED_IDS) desc
+	WHERE IF( IsRepost, u2.id, u1.id) = in_poster_id
+    GROUP BY p.id
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
     LIMIT in_offset, in_limit;
     
-    SELECT * 
-    FROM temp_FINAL_POSTS;
+    SELECT 
+		ID, 
+		PublisherID, 
+		PublisherUserName, 
+		PublisherTag, 
+		PublisherProfilePic, 
+		ReposterID, 
+		ReposterTag, 
+		Date, 
+		Content, 
+		RepostID
+    FROM temp_FINAL_POSTS
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc;
     
 	SELECT 
 		ID
-    FROM temp_FINAL_POSTS;
+    FROM temp_FINAL_POSTS
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc;
     
     DROP TABLE temp_FINAL_POSTS;
     

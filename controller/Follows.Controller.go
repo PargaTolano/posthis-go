@@ -80,9 +80,9 @@ func CreateFollow() http.Handler {
 			return
 		}
 
-		followerId := context.Get(r, "userId").(uint)
+		followerId := context.Get(r, "userId").(uint64)
 
-		user, err := followModel.CreateFollow(uint(followedId), followerId)
+		user, err := followModel.CreateFollow(uint(followedId), uint(followerId))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -108,9 +108,9 @@ func DeleteFollow() http.Handler {
 			return
 		}
 
-		followerId := context.Get(r, "userId").(uint)
+		followerId := context.Get(r, "userId").(uint64)
 
-		err = followModel.DeleteFollow(followerId, uint(id))
+		err = followModel.DeleteFollow(uint(followerId), uint(id))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

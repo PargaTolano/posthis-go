@@ -79,7 +79,7 @@ func (sm SearchModel) GetSearch(
 				model.Posts[i].Media = append(model.Posts[i].Media,
 					viewmodel.MediaVM{
 						ID:      posts[i].Media[j].ID,
-						Name:    posts[i].Media[j].Name,
+						Path:    posts[i].Media[j].Name,
 						Mime:    posts[i].Media[j].Mime,
 						IsVideo: strings.Contains(posts[i].Media[j].Mime, "video")})
 			}

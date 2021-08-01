@@ -27,6 +27,32 @@ func GetUsers() http.Handler {
 	})
 }
 
+func GetUser() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		userModel := UserModel{}
+
+		vars := mux.Vars(r)
+
+		strId := vars["id"]
+		id, err := strconv.ParseUint(strId, 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		user, err := userModel.GetUser(uint(id))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := SuccesVM{Data: user, Message: "User retrieved Succesfully"}
+
+		utils.WriteJsonResponse(w, response)
+	})
+}
+
 func CreateUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

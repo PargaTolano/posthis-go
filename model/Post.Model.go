@@ -5,6 +5,9 @@ import (
 	"posthis/db"
 	"posthis/entity"
 	"posthis/utils"
+	"strings"
+
+	"gorm.io/gorm/clause"
 )
 
 type PostModel struct {
@@ -176,11 +179,20 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 		postIds = append(postIds, id)
 	}
 
-	db.Preload("Media").Find(&posts, postIds)
+	db.Preload("Media").Clauses(clause.OrderBy{
+		Expression: clause.Expr{SQL: "FIELD(id,?)", Vars: []interface{}{postIds}, WithoutParentheses: true},
+	}).Find(&posts, postIds)
 
 	for i := range posts {
 		for j := range posts[i].Media {
-			models[i].Media = append(models[i].Media, posts[i].Media[j].GetPath(pm.Scheme, pm.Host))
+			mvm := MediaVM{
+				ID:      posts[i].Media[j].ID,
+				Path:    posts[i].Media[j].GetPath(pm.Scheme, pm.Host),
+				Mime:    posts[i].Media[j].Mime,
+				IsVideo: strings.Contains(posts[i].Media[j].Mime, "video"),
+			}
+
+			models[i].Media = append(models[i].Media, mvm)
 		}
 	}
 
@@ -234,11 +246,20 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 		postIds = append(postIds, id)
 	}
 
-	db.Preload("Media").Find(&posts, postIds)
+	db.Preload("Media").Clauses(clause.OrderBy{
+		Expression: clause.Expr{SQL: "FIELD(id,?)", Vars: []interface{}{postIds}, WithoutParentheses: true},
+	}).Find(&posts, postIds)
 
 	for i := range posts {
 		for j := range posts[i].Media {
-			models[i].Media = append(models[i].Media, posts[i].Media[j].GetPath(pm.Scheme, pm.Host))
+			mvm := MediaVM{
+				ID:      posts[i].Media[j].ID,
+				Path:    posts[i].Media[j].GetPath(pm.Scheme, pm.Host),
+				Mime:    posts[i].Media[j].Mime,
+				IsVideo: strings.Contains(posts[i].Media[j].Mime, "video"),
+			}
+
+			models[i].Media = append(models[i].Media, mvm)
 		}
 	}
 

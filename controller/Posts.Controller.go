@@ -64,11 +64,11 @@ func CreatePost() http.Handler {
 
 		formdata := r.MultipartForm
 
-		ownerId := context.Get(r, "userId").(uint)
+		ownerId := context.Get(r, "userId").(uint64)
 		content := r.FormValue("content")
 		files := formdata.File["files"]
 
-		post, err := postModel.CreatePost(ownerId, content, files)
+		post, err := postModel.CreatePost(uint(ownerId), content, files)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -158,9 +158,9 @@ func GetFeed() http.Handler {
 			return
 		}
 
-		id := context.Get(r, "userId").(uint)
+		id := context.Get(r, "userId").(uint64)
 
-		models, err := postModel.GetFeed(id, uint(offset), uint(limit))
+		models, err := postModel.GetFeed(uint(id), uint(offset), uint(limit))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -196,9 +196,9 @@ func GetUserFeed() http.Handler {
 			return
 		}
 
-		id := context.Get(r, "userId").(uint)
+		id := context.Get(r, "userId").(uint64)
 
-		models, err := postModel.GetUserFeed(id, uint(posterId), uint(offset), uint(limit))
+		models, err := postModel.GetUserFeed(uint(id), uint(posterId), uint(offset), uint(limit))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
