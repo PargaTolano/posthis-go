@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
-	"posthis/api"
 	"posthis/auth"
+	"posthis/controller"
 	"posthis/db"
 
 	"github.com/gorilla/mux"
@@ -23,38 +23,47 @@ func initRoutes() {
 		http.ServeFile(w, r, "./pages/index.html")
 	})
 
+	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./pages/404.html")
+	})
+
 	fileServer := http.FileServer(http.Dir("./static/"))
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", fileServer))
 
-	r.Handle("/api/posts", auth.TokenAuthMiddleware(api.GetPosts()))
-	r.Handle("/api/post/{id}", api.GetPost())
-	r.Handle("/api/posts-create", auth.TokenAuthMiddleware(api.CreatePost()))
-	r.Handle("/api/posts-update/{id}", auth.TokenAuthMiddleware(api.UpdatePost()))
-	r.Handle("/api/posts-delete/{id}", auth.TokenAuthMiddleware(api.DeletePost()))
-	r.Handle("/api/posts-feed", auth.TokenAuthMiddleware(api.GetFeed()))
+	r.Handle("/api/posts", auth.TokenAuthMiddleware(controller.GetPosts())).Methods("GET")
+	r.Handle("/api/post/{id}", controller.GetPost()).Methods("GET")
+	r.Handle("/api/posts-create", auth.TokenAuthMiddleware(controller.CreatePost())).Methods("POST")
+	r.Handle("/api/posts-update/{id}", auth.TokenAuthMiddleware(controller.UpdatePost())).Methods("PUT")
+	r.Handle("/api/posts-delete/{id}", auth.TokenAuthMiddleware(controller.DeletePost())).Methods("DELETE")
+	r.Handle("/api/posts-feed/{offset}/{limit}", auth.TokenAuthMiddleware(controller.GetFeed())).Methods("GET")
+	r.Handle("/api/posts-feed/{id}/{offset}/{limit}", auth.TokenAuthMiddleware(controller.GetUserFeed())).Methods("GET")
 
-	r.Handle("/api/users", auth.TokenAuthMiddleware(api.GetUsers()))
-	r.Handle("/api/users-create", api.CreateUser())
-	r.Handle("/api/users-update/{id}", auth.TokenAuthMiddleware(api.UpdateUser()))
-	r.Handle("/api/users-delete/{id}", auth.TokenAuthMiddleware(api.DeleteUser()))
-	r.Handle("/api/login", api.Login())
-	r.Handle("/api/logout", auth.TokenAuthMiddleware(api.Logout()))
+	r.Handle("/api/users", auth.TokenAuthMiddleware(controller.GetUsers())).Methods("GET")
+	r.Handle("/api/users-create", controller.CreateUser()).Methods("POST")
+	r.Handle("/api/users-update/{id}", auth.TokenAuthMiddleware(controller.UpdateUser())).Methods("PUT")
+	r.Handle("/api/users-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteUser())).Methods("DELETE")
+	r.Handle("/api/login", controller.Login()).Methods("POST")
+	r.Handle("/api/logout", auth.TokenAuthMiddleware(controller.Logout())).Methods("POST")
 
-	r.Handle("/api/search", auth.TokenAuthMiddleware(api.GetSearch()))
+	r.Handle("/api/search/{offset-post}/{limit-post}/{offset-user}/{limit-user}", auth.TokenAuthMiddleware(controller.GetSearch())).Methods("GET")
 
-	r.Handle("/api/replies/{id}", auth.TokenAuthMiddleware(api.CreateReply()))
-	r.Handle("/api/replies-create/{userId}/{postId}", auth.TokenAuthMiddleware(api.CreateReply()))
-	r.Handle("/api/replies-update/{id}", auth.TokenAuthMiddleware(api.UpdateReply()))
-	r.Handle("/api/replies-delete/{id}", auth.TokenAuthMiddleware(api.DeleteUser()))
+	r.Handle("/api/replies/{id}", auth.TokenAuthMiddleware(controller.CreateReply())).Methods("GET")
+	r.Handle("/api/replies-create/{userId}/{postId}", auth.TokenAuthMiddleware(controller.CreateReply())).Methods("POST")
+	r.Handle("/api/replies-update/{id}", auth.TokenAuthMiddleware(controller.UpdateReply())).Methods("UPDATE")
+	r.Handle("/api/replies-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteUser())).Methods("DELETE")
 
-	r.Handle("/api/likes/{id}", auth.TokenAuthMiddleware(api.GetLikes()))
-	r.Handle("/api/likes-create/{userId}/{postId}", auth.TokenAuthMiddleware(api.CreateLike()))
-	r.Handle("/api/likes-delete/{id}", auth.TokenAuthMiddleware(api.DeleteLike()))
+	r.Handle("/api/likes/{id}", auth.TokenAuthMiddleware(controller.GetLikes())).Methods("GET")
+	r.Handle("/api/likes-create/{userId}/{postId}", auth.TokenAuthMiddleware(controller.CreateLike())).Methods("POST")
+	r.Handle("/api/likes-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteLike())).Methods("DELETE")
 
-	r.Handle("/api/follows/{id}", auth.TokenAuthMiddleware(api.GetFollows()))
-	r.Handle("/api/follows-following/{id}", auth.TokenAuthMiddleware(api.GetFollowing()))
-	r.Handle("/api/follows-create/{id}", auth.TokenAuthMiddleware(api.CreateFollow()))
-	r.Handle("/api/follows-delete/{id}", auth.TokenAuthMiddleware(api.DeleteFollow()))
+	r.Handle("/api/reposts/{id}", auth.TokenAuthMiddleware(controller.GetReposts())).Methods("GET")
+	r.Handle("/api/reposts-create/{userId}/{postId}", auth.TokenAuthMiddleware(controller.CreateRepost())).Methods("POST")
+	r.Handle("/api/reposts-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteRepost())).Methods("DELETE")
+
+	r.Handle("/api/follows/{id}", auth.TokenAuthMiddleware(controller.GetFollows())).Methods("GET")
+	r.Handle("/api/follows-following/{id}", auth.TokenAuthMiddleware(controller.GetFollowing())).Methods("GET")
+	r.Handle("/api/follows-create/{id}", auth.TokenAuthMiddleware(controller.CreateFollow())).Methods("POST")
+	r.Handle("/api/follows-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteFollow())).Methods("DELETE")
 
 	http.Handle("/", r)
 }

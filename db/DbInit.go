@@ -1,6 +1,14 @@
 package db
 
-import . "posthis/model"
+import "posthis/entity"
+
+type User = entity.User
+type Post = entity.Post
+type Media = entity.Media
+type Like = entity.Like
+type Reply = entity.Reply
+type Repost = entity.Repost
+type Follow = entity.Follow
 
 func InitDB() {
 	db, err := ConnectToDb()

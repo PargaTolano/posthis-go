@@ -1,6 +1,6 @@
 package viewmodel
 
 type SuccesVM struct {
-	Data    IResponseData
+	Data    interface{}
 	Message string
 }

@@ -6,10 +6,12 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
-	. "posthis/model"
+	"posthis/entity"
 
 	uuid "github.com/satori/go.uuid"
 )
+
+type Media = entity.Media
 
 func UploadMultipleFiles(files []*multipart.FileHeader, media *[]*Media) error {
 
