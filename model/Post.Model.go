@@ -31,17 +31,40 @@ func (PostModel) GetPosts() ([]Post, error) {
 func (pm PostModel) GetPost(id uint) (*PostDetailVM, error) {
 
 	post := Post{}
+	model := PostDetailVM{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
 		return nil, err
 	}
 
-	db.Preload("Media").First(&post, id)
-	model := PostDetailVM{ID: post.ID, Content: post.Content, Media: []string{}}
+	query := `CALL SP_GET_POST_DETAIL(?)`
 
-	for _, v := range post.Media {
-		model.Media = append(model.Media, v.GetPath(pm.Scheme, pm.Host))
+	err = db.Raw(query, id).Row().Scan(
+		&model.ID,
+		&model.PublisherID,
+		&model.PublisherUserName,
+		&model.PublisherTag,
+		&model.PublisherProfilePic,
+		&model.ReposterUsername,
+		&model.ReposterTag,
+		&model.Date,
+		&model.Content,
+		&model.RepostID)
+	if err != nil {
+		return nil, err
+	}
+
+	db.Preload("Media").First(&post, id)
+
+	for i := range post.Media {
+
+		mvm := MediaVM{
+			ID:      post.Media[i].ID,
+			Path:    post.Media[i].Name,
+			Mime:    post.Media[i].Mime,
+			IsVideo: strings.Contains("video", post.Media[i].Mime)}
+		model.Media = append(model.Media, mvm)
 	}
 
 	return &model, nil

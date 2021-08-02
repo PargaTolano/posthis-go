@@ -65,10 +65,6 @@ func initRoutes() http.Handler {
 	r.Handle("/api/follows-create/{id}", auth.TokenAuthMiddleware(controller.CreateFollow())).Methods("POST")
 	r.Handle("/api/follows-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteFollow())).Methods("DELETE")
 
-	//headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
-	//originsOk := handlers.AllowedOrigins([]string{os.Getenv("ORIGIN_ALLOWED")})
-	//methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
-
 	http.Handle("/", r)
 
 	return r
