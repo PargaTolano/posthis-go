@@ -2,7 +2,7 @@ package controller
 
 import (
 	"posthis/model"
-	"posthis/model/viewmodel"
+	"posthis/viewmodel"
 )
 
 type Model = model.Model

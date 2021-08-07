@@ -28,7 +28,7 @@ func (PostModel) GetPosts() ([]Post, error) {
 	return posts, nil
 }
 
-func (pm PostModel) GetPost(id uint) (*PostDetailVM, error) {
+func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 
 	post := Post{}
 	model := PostDetailVM{}
@@ -38,9 +38,9 @@ func (pm PostModel) GetPost(id uint) (*PostDetailVM, error) {
 		return nil, err
 	}
 
-	query := `CALL SP_GET_POST_DETAIL(?)`
+	query := `CALL SP_GET_POST_DETAIL(?, ?)`
 
-	err = db.Raw(query, id).Row().Scan(
+	err = db.Raw(query, id, userId).Row().Scan(
 		&model.ID,
 		&model.PublisherID,
 		&model.PublisherUserName,
@@ -50,10 +50,14 @@ func (pm PostModel) GetPost(id uint) (*PostDetailVM, error) {
 		&model.ReposterTag,
 		&model.Date,
 		&model.Content,
-		&model.RepostID)
+		&model.RepostID,
+		&model.IsLiked,
+		&model.IsReposted)
 	if err != nil {
 		return nil, err
 	}
+
+	model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
 
 	db.Preload("Media").First(&post, id)
 
@@ -61,7 +65,7 @@ func (pm PostModel) GetPost(id uint) (*PostDetailVM, error) {
 
 		mvm := MediaVM{
 			ID:      post.Media[i].ID,
-			Path:    post.Media[i].Name,
+			Path:    post.Media[i].GetPath(pm.Scheme, pm.Host),
 			Mime:    post.Media[i].Mime,
 			IsVideo: strings.Contains("video", post.Media[i].Mime)}
 		model.Media = append(model.Media, mvm)
@@ -100,7 +104,7 @@ func (PostModel) CreatePost(ownerId uint, content string, files []*multipart.Fil
 	return &post, nil
 }
 
-func (PostModel) UpdatePost(id uint, content string, deleted []string, files []*multipart.FileHeader) (*Post, error) {
+func (pm PostModel) UpdatePost(userId, id uint, content string, deleted []string, files []*multipart.FileHeader) (*PostDetailVM, error) {
 
 	var (
 		post         Post
@@ -137,7 +141,12 @@ func (PostModel) UpdatePost(id uint, content string, deleted []string, files []*
 
 	db.Save(&post)
 
-	return &post, nil
+	model, err := pm.GetPost(userId, post.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
 func (PostModel) DeletePost(id uint) error {
@@ -185,7 +194,9 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 			&model.ReposterTag,
 			&model.Date,
 			&model.Content,
-			&model.RepostID)
+			&model.RepostID,
+			&model.IsLiked,
+			&model.IsReposted)
 
 		model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
 
@@ -252,7 +263,9 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 			&model.ReposterTag,
 			&model.Date,
 			&model.Content,
-			&model.RepostID)
+			&model.RepostID,
+			&model.IsLiked,
+			&model.IsReposted)
 
 		model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
 

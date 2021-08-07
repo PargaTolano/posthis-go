@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"posthis/auth"
 	"posthis/db"
+	"posthis/entity"
 	"posthis/utils"
 )
 
@@ -30,21 +31,32 @@ func (UserModel) GetUsers() ([]User, error) {
 	return users, nil
 }
 
-func (UserModel) GetUser(id uint) (*User, error) {
+func (um UserModel) GetUser(id, viewerId uint) (*UserVM, error) {
 
-	user := User{}
+	model := UserVM{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
 		return nil, err
 	}
 
-	db.Preload("ProfilePic").Preload("CoverPic").Find(&user, id)
-	if db.Error != nil {
-		return nil, db.Error
-	}
+	row := db.Raw("CALL SP_GET_PROFILE(?,?)", id, viewerId).Row()
 
-	return &user, nil
+	row.Scan(
+		&model.ID,
+		&model.Username,
+		&model.Tag,
+		&model.Email,
+		&model.ProfilePicPath,
+		&model.CoverPicPath,
+		&model.FollowerCount,
+		&model.FollowingCount,
+		&model.IsFollowed)
+
+	model.ProfilePicPath = entity.GetPath(um.Scheme, um.Host, model.ProfilePicPath)
+	model.CoverPicPath = entity.GetPath(um.Scheme, um.Host, model.CoverPicPath)
+
+	return &model, nil
 }
 
 func (UserModel) CreateUser(model UserCreateVM) (*User, error) {
@@ -144,7 +156,7 @@ func (um UserModel) Login(model UserLoginVm) (interface{}, error) {
 		return nil, err
 	}
 
-	if err := db.Where("username = ?", model.Username).First(&user).Error; err != nil {
+	if err := db.Where("username = ?", model.Username).Find(&user).Error; err != nil {
 		return nil, err
 	}
 

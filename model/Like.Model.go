@@ -24,7 +24,7 @@ func (LikeModel) GetLikes(id uint) ([]*Like, error) {
 	return post.Likes, nil
 }
 
-func (LikeModel) CreateLike(userId, postId uint) (*Like, error) {
+func (lm LikeModel) CreateLike(userId, postId uint) (*PostDetailVM, error) {
 
 	user := User{}
 	post := Post{}
@@ -45,26 +45,49 @@ func (LikeModel) CreateLike(userId, postId uint) (*Like, error) {
 	like := Like{UserID: user.ID, PostID: post.ID}
 
 	//Once it works add everything to the database
-	if err = db.FirstOrCreate(&like).Error; err != nil {
+	if err = db.Create(&like).Error; err != nil {
 		return nil, err
 	}
 
 	db.Model(&user).Association("likes").Append(&like)
 	db.Model(&post).Association("likes").Append(&like)
 
-	return &like, nil
+	postModel := PostModel(lm)
+	model, err := postModel.GetPost(userId, postId)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
-func (LikeModel) DeleteLike(id uint) error {
+func (lm LikeModel) DeleteLike(userId, postId uint) (*PostDetailVM, error) {
+
+	like := Like{}
+	post := Post{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err = db.Delete(&Like{}, id).Error; err != nil {
-		return err
+	if err = db.First(&like, "user_id = ? AND post_id = ?", userId, postId).Error; err != nil {
+		return nil, err
 	}
 
-	return nil
+	if err = db.First(&post, postId).Error; err != nil {
+		return nil, err
+	}
+
+	if err = db.Delete(&like).Error; err != nil {
+		return nil, err
+	}
+
+	postModel := PostModel(lm)
+	model, err := postModel.GetPost(userId, postId)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }

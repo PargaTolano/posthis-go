@@ -41,7 +41,9 @@ func GetPost() http.Handler {
 			return
 		}
 
-		model, err := postModel.GetPost(uint(id))
+		ownerId := context.Get(r, "userId").(uint64)
+
+		model, err := postModel.GetPost(uint(ownerId), uint(id))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -87,7 +89,7 @@ func CreatePost() http.Handler {
 func UpdatePost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		postModel := PostModel{}
+		postModel := PostModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		r.ParseMultipartForm(10 << 20)
 
@@ -102,7 +104,9 @@ func UpdatePost() http.Handler {
 			return
 		}
 
-		post, err := postModel.UpdatePost(uint(id), r.FormValue("content"), formdata.Value["deleted"], formdata.File["files"])
+		ownerId := context.Get(r, "userId").(uint64)
+
+		post, err := postModel.UpdatePost(uint(ownerId), uint(id), r.FormValue("content"), formdata.Value["deleted"], formdata.File["files"])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

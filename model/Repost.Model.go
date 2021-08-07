@@ -24,7 +24,7 @@ func (RepostModel) GetReposts(id uint) ([]*Repost, error) {
 	return post.Reposts, nil
 }
 
-func (RepostModel) CreateRepost(userId uint, postId uint) (*Repost, error) {
+func (rm RepostModel) CreateRepost(userId uint, postId uint) (*PostDetailVM, error) {
 
 	user := User{}
 	post := Post{}
@@ -45,27 +45,48 @@ func (RepostModel) CreateRepost(userId uint, postId uint) (*Repost, error) {
 	repost := Repost{UserID: user.ID, PostID: post.ID}
 
 	//Once it works add everything to the database
-	if err = db.FirstOrCreate(&repost).Error; err != nil {
+	if err = db.Create(&repost).Error; err != nil {
 		return nil, err
 	}
 	db.Model(&user).Association("reposts").Append(&repost)
 	db.Model(&post).Association("reposts").Append(&repost)
 
-	return &repost, nil
+	postModel := PostModel(rm)
+	model, err := postModel.GetPost(userId, postId)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
-func (RepostModel) DeleteRepost(id uint) error {
+func (rm RepostModel) DeleteRepost(userId, postId uint) (*PostDetailVM, error) {
 
 	repost := Repost{}
+	post := Post{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err = db.Delete(&repost, id).Error; err != nil {
-		return err
+	if err = db.First(&repost, "user_id = ? AND post_id = ?", userId, postId).Error; err != nil {
+		return nil, err
 	}
 
-	return nil
+	if err = db.First(&post, postId).Error; err != nil {
+		return nil, err
+	}
+
+	if err = db.Delete(&repost).Error; err != nil {
+		return nil, err
+	}
+
+	postModel := PostModel(rm)
+	model, err := postModel.GetPost(userId, postId)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }

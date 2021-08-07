@@ -6,6 +6,7 @@ import (
 	"posthis/utils"
 	"strconv"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -30,7 +31,7 @@ func GetUsers() http.Handler {
 func GetUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		userModel := UserModel{}
+		userModel := UserModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -41,7 +42,9 @@ func GetUser() http.Handler {
 			return
 		}
 
-		user, err := userModel.GetUser(uint(id))
+		viewerId := context.Get(r, "userId").(uint64)
+
+		user, err := userModel.GetUser(uint(id), uint(viewerId))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -79,7 +82,6 @@ func CreateUser() http.Handler {
 }
 
 func UpdateUser() http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		userModel := UserModel{}
@@ -171,7 +173,6 @@ func Login() http.Handler {
 }
 
 func Logout() http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		userModel := UserModel{}

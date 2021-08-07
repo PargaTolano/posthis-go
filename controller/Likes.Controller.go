@@ -5,6 +5,7 @@ import (
 	"posthis/utils"
 	"strconv"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -40,7 +41,7 @@ func GetLikes() http.Handler {
 func CreateLike() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		likeModel := LikeModel{}
+		likeModel := LikeModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -71,7 +72,7 @@ func CreateLike() http.Handler {
 func DeleteLike() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		likeModel := LikeModel{}
+		likeModel := LikeModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 		strId := vars["id"]
@@ -82,13 +83,15 @@ func DeleteLike() http.Handler {
 			return
 		}
 
-		err = likeModel.DeleteLike(uint(id))
+		ownerId := context.Get(r, "userId").(uint64)
+
+		model, err := likeModel.DeleteLike(uint(ownerId), uint(id))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := SuccesVM{Data: nil, Message: "Like deleted successfully"}
+		response := SuccesVM{Data: model, Message: "Like deleted successfully"}
 
 		utils.WriteJsonResponse(w, response)
 	})

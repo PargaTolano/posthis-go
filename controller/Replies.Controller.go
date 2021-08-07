@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 	"posthis/utils"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 func GetReplies() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		replyModel := ReplyModel{}
+		replyModel := ReplyModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -20,13 +21,19 @@ func GetReplies() http.Handler {
 
 		id, err := strconv.ParseUint(strId, 10, 32)
 		if err != nil {
+			log.Fatal(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		replies, err := replyModel.GetReplies(uint(id))
+		models, err := replyModel.GetReplies(uint(id))
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		response := SuccesVM{Data: replies, Message: "Replies retrieved sucessfully"}
+		response := SuccesVM{Data: models, Message: "Replies retrieved sucessfully"}
 
 		utils.WriteJsonResponse(w, response)
 	})

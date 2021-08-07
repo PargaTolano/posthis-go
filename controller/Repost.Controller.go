@@ -5,6 +5,7 @@ import (
 	"posthis/utils"
 	"strconv"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -40,7 +41,7 @@ func GetReposts() http.Handler {
 func CreateRepost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		repostModel := RepostModel{}
+		repostModel := RepostModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -56,13 +57,13 @@ func CreateRepost() http.Handler {
 			return
 		}
 
-		repost, err := repostModel.CreateRepost(uint(userId), uint(postId))
+		model, err := repostModel.CreateRepost(uint(userId), uint(postId))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := SuccesVM{Data: repost, Message: "Repost created successfully"}
+		response := SuccesVM{Data: model, Message: "Repost created successfully"}
 
 		utils.WriteJsonResponse(w, response)
 	})
@@ -71,7 +72,7 @@ func CreateRepost() http.Handler {
 func DeleteRepost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		repostModel := RepostModel{}
+		repostModel := RepostModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 		strId := vars["id"]
@@ -81,13 +82,15 @@ func DeleteRepost() http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		err = repostModel.DeleteRepost(uint(id))
+		ownerId := context.Get(r, "userId").(uint64)
+
+		model, err := repostModel.DeleteRepost(uint(ownerId), uint(id))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := SuccesVM{Data: nil, Message: "Repost deleted successfully"}
+		response := SuccesVM{Data: model, Message: "Repost deleted successfully"}
 
 		utils.WriteJsonResponse(w, response)
 	})

@@ -14,5 +14,20 @@ func ConnectToDb() (*gorm.DB, error) {
 		SkipDefaultTransaction: true,
 		NowFunc:                time.Now,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB.SetMaxIdleConns(10)
+
+	sqlDB.SetMaxOpenConns(100)
+
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
 	return db, err
 }

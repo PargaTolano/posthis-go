@@ -2,7 +2,7 @@ package model
 
 import (
 	"posthis/entity"
-	"posthis/model/viewmodel"
+	"posthis/viewmodel"
 )
 
 type Model struct {
@@ -27,3 +27,5 @@ type UserCreateVM = viewmodel.UserCreateVM
 type MediaVM = viewmodel.MediaVM
 type UserLoginVm = viewmodel.UserLoginVM
 type UserUpdateVM = viewmodel.UserUpdateVM
+type UserVM = viewmodel.UserVM
+type ReplyVM = viewmodel.ReplyVM

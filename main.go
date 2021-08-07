@@ -12,6 +12,9 @@ import (
 	"github.com/rs/cors"
 )
 
+//TODO
+// PREVENT SOFT DELETES IN LIKES, REPLIES, REPOSTS, MEDIA AND FOLLOWS
+
 func initRoutes() http.Handler {
 
 	r := mux.NewRouter()
@@ -30,7 +33,7 @@ func initRoutes() http.Handler {
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", fileServer))
 
 	r.Handle("/api/posts", auth.TokenAuthMiddleware(controller.GetPosts())).Methods("GET")
-	r.Handle("/api/post/{id}", controller.GetPost()).Methods("GET")
+	r.Handle("/api/post/{id}", auth.TokenAuthMiddleware(controller.GetPost())).Methods("GET")
 	r.Handle("/api/posts-create", auth.TokenAuthMiddleware(controller.CreatePost())).Methods("POST")
 	r.Handle("/api/posts-update/{id}", auth.TokenAuthMiddleware(controller.UpdatePost())).Methods("PUT")
 	r.Handle("/api/posts-delete/{id}", auth.TokenAuthMiddleware(controller.DeletePost())).Methods("DELETE")
@@ -47,9 +50,9 @@ func initRoutes() http.Handler {
 
 	r.Handle("/api/search/{offset-post}/{limit-post}/{offset-user}/{limit-user}", auth.TokenAuthMiddleware(controller.GetSearch())).Methods("GET")
 
-	r.Handle("/api/replies/{id}", auth.TokenAuthMiddleware(controller.CreateReply())).Methods("GET")
+	r.Handle("/api/replies/{id}", auth.TokenAuthMiddleware(controller.GetReplies())).Methods("GET")
 	r.Handle("/api/replies-create/{userId}/{postId}", auth.TokenAuthMiddleware(controller.CreateReply())).Methods("POST")
-	r.Handle("/api/replies-update/{id}", auth.TokenAuthMiddleware(controller.UpdateReply())).Methods("UPDATE")
+	r.Handle("/api/replies-update/{id}", auth.TokenAuthMiddleware(controller.UpdateReply())).Methods("PUT")
 	r.Handle("/api/replies-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteUser())).Methods("DELETE")
 
 	r.Handle("/api/likes/{id}", auth.TokenAuthMiddleware(controller.GetLikes())).Methods("GET")

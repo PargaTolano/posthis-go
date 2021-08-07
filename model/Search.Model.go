@@ -4,7 +4,7 @@ import (
 	"errors"
 	"posthis/db"
 	"posthis/entity"
-	"posthis/model/viewmodel"
+	"posthis/viewmodel"
 	"strings"
 )
 
@@ -29,7 +29,7 @@ func (sm SearchModel) GetSearch(
 	}
 
 	if !searchPost && !searchUser {
-		return nil, errors.New("You have to search at least one of the following fields: { posts, users}")
+		return nil, errors.New("you have to search at least one of the following fields: { posts, users}")
 	}
 
 	if searchPost {
