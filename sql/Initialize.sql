@@ -110,13 +110,13 @@ CREATE PROCEDURE SP_GET_FEED
 )
 BEGIN
 	DROP TABLE IF EXISTS temp_FOLLOWED_IDS;
-	CREATE TABLE temp_FOLLOWED_IDS(id int) 
+	CREATE TABLE temp_FOLLOWED_IDS
     AS
     SELECT u.id AS ID FROM users u
-    JOIN   follows f ON u.ID = f.followed_id AND f.follower_id = in_id;
+    JOIN follows f ON u.ID = f.followed_id AND f.follower_id = in_id;
     
 	DROP TABLE IF EXISTS temp_REPOSTED_IDS;
-	CREATE TABLE temp_REPOSTED_IDS(id int) 
+	CREATE TABLE temp_REPOSTED_IDS 
     AS
     SELECT p.id
     FROM posts p
@@ -133,7 +133,7 @@ BEGIN
         COALESCE(m.name, '')																						PublisherProfilePic,
 		COALESCE(u2.username, '') 																					ReposterID,
         COALESCE(u2.tag, '')																						ReposterTag,
-		IF( COALESCE(p.id in (SELECT id FROM temp_REPOSTED_IDS), FALSE), r.created_at, p.created_at) 			 	Date,
+		IF( p.id IN (SELECT id FROM temp_REPOSTED_IDS), r.created_at, p.created_at) 			 					Date,
         p.Content 																								 	Content,
 		COALESCE(r.id, 0) 																						 	RepostID,
         p.id in (SELECT id FROM temp_REPOSTED_IDS) 																 	IsRepost,
@@ -142,9 +142,9 @@ BEGIN
         EXISTS ( SELECT*FROM likes l 	WHERE l.post_id = p.id AND l.user_id = in_id AND l.deleted_at IS NULL )	 	IsLiked,
         EXISTS ( SELECT*FROM reposts r 	WHERE post_id   = p.id AND r.user_id = in_id AND r.deleted_at IS NULL )  	IsReposted
     FROM posts p
-    JOIN users u1 ON p.owner_id = u1.id
+    JOIN users u1 ON p.owner_id = u1.id AND u1.deleted_at IS NULL
 	LEFT JOIN media m  ON m.owner_id = u1.id AND m.owner_type = 'profilepicuser'
-    LEFT JOIN reposts r ON p.id = r.post_id
+    LEFT JOIN reposts r ON p.id = r.post_id AND r.user_id != in_id
     LEFT JOIN users u2 ON r.user_id = u2.id
     GROUP BY p.id
     ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
@@ -201,25 +201,25 @@ BEGIN
     CREATE TEMPORARY TABLE temp_FINAL_POSTS
     AS
     SELECT 
-		p.id 																									ID,
-		u1.id 																									PublisherID,
-        u1.username																								PublisherUserName,
-        u1.tag      																							PublisherTag,
-        COALESCE(m.name, '')																					PublisherProfilePic,
-		COALESCE(u2.username, '') 																				ReposterID,
-        COALESCE(u2.tag, '')																					ReposterTag,
-		IF( COALESCE(p.id in (SELECT id FROM temp_REPOSTED_IDS), FALSE), r.created_at, p.created_at) 			Date,
-        p.Content 																								Content,
-		COALESCE(r.id, 0) 																						RepostID,
-        p.id in (SELECT id FROM temp_REPOSTED_IDS) 																IsRepost,
-        COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE) 											IsFollowedRepost,
-        u1.id in (SELECT id from temp_FOLLOWED_IDS) 															IsFollowedPost,
-        EXISTS ( SELECT*FROM likes WHERE post_id = p.id AND user_id = in_id AND deleted_at IS NULL )   			IsLiked,
-        EXISTS ( SELECT*FROM reposts WHERE post_id = p.id AND user_id = in_id AND deleted_at IS NULL )   		IsReposted
+		p.id 																										ID,
+		u1.id 																										PublisherID,
+        u1.username																									PublisherUserName,
+        u1.tag      																								PublisherTag,
+        COALESCE(m.name, '')																						PublisherProfilePic,
+		COALESCE(u2.username, '') 																					ReposterID,
+        COALESCE(u2.tag, '')																						ReposterTag,
+		IF( p.id IN (SELECT id FROM temp_REPOSTED_IDS), r.created_at, p.created_at) 			 					Date,
+        p.Content 																								 	Content,
+		COALESCE(r.id, 0) 																						 	RepostID,
+        p.id in (SELECT id FROM temp_REPOSTED_IDS) 																 	IsRepost,
+        COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE) 											 	IsFollowedRepost,
+        u1.id in (SELECT id from temp_FOLLOWED_IDS) 															 	IsFollowedPost,
+        EXISTS ( SELECT*FROM likes l 	WHERE l.post_id = p.id AND l.user_id = in_id AND l.deleted_at IS NULL )	 	IsLiked,
+        EXISTS ( SELECT*FROM reposts r 	WHERE post_id   = p.id AND r.user_id = in_id AND r.deleted_at IS NULL )  	IsReposted
     FROM posts p
-    JOIN users u1 ON p.owner_id = u1.id
+    JOIN users u1 ON p.owner_id = u1.id AND u1.deleted_at IS NULL
 	LEFT JOIN media m  ON m.owner_id = u1.id AND m.owner_type = 'profilepicuser'
-    LEFT JOIN reposts r ON p.id = r.post_id
+    LEFT JOIN reposts r ON p.id = r.post_id AND r.user_id != in_id
     LEFT JOIN users u2 ON r.user_id = u2.id
 	WHERE IF( p.id in (SELECT id FROM temp_REPOSTED_IDS) , u2.id, u1.id) = in_poster_id
     GROUP BY p.id
@@ -283,7 +283,7 @@ BEGIN
     LEFT JOIN media m 		ON u.id = m.owner_id AND m.owner_type = 'profilepicuser'
     LEFT JOIN likes l 		ON l.post_id  = p.id
     LEFT JOIN replies ry 	ON ry.post_id = p.id
-    LEFT JOIN reposts r		ON r.post_id  = p.idss
+    LEFT JOIN reposts r		ON r.post_id  = p.ids
     WHERE p.content LIKE CONCAT('%', in_query,'%')
     GROUP BY ID, PublisherUserName, PublisherTag, PublisherProfilePic
     ORDER BY Date
@@ -340,3 +340,61 @@ DELIMITER ;
 
 #RUN THIS PART AFTER INITIALIZING THE GO APP
 CREATE INDEX idx_post_id ON posts(id);
+
+SELECT * FROM POSTS;
+
+#TEST
+DROP PROCEDURE IF EXISTS TSP_TEST_FEED;
+DELIMITER $$
+CREATE PROCEDURE TSP_TEST_FEED
+(IN IN_ID INT, IN IN_OFFSET INT, IN IN_LIMIT INT)
+BEGIN
+
+	DROP TABLE IF EXISTS temp_FOLLOWED_IDS;
+	CREATE TABLE temp_FOLLOWED_IDS(id int) 
+    AS
+    SELECT u.id AS ID FROM users u
+    JOIN   follows f ON u.ID = f.followed_id AND f.follower_id = IN_ID AND f.deleted_at IS NOT NULL;
+    
+	DROP TABLE IF EXISTS temp_REPOSTED_IDS;
+	CREATE TABLE temp_REPOSTED_IDS(id int) 
+    AS
+    SELECT p.id
+    FROM posts p
+    JOIN reposts r 	ON r.post_id = p.id
+    WHERE r.user_id in (SELECT id FROM temp_FOLLOWED_IDS);
+    
+    #SELECT * FROM temp_FOLLOWED_IDS;
+    #SELECT * FROM temp_REPOSTED_IDS;
+
+	SELECT 
+		p.id 																										ID,
+		u1.id 																										PublisherID,
+        u1.username																									PublisherUserName,
+        u1.tag      																								PublisherTag,
+        COALESCE(m.name, '')																						PublisherProfilePic,
+		COALESCE(u2.username, '') 																					ReposterID,
+        COALESCE(u2.tag, '')																						ReposterTag,
+		IF( p.id IN (SELECT id FROM temp_REPOSTED_IDS), r.created_at, p.created_at) 			 					Date,
+        p.Content 																								 	Content,
+		COALESCE(r.id, 0) 																						 	RepostID,
+        p.id in (SELECT id FROM temp_REPOSTED_IDS) 																 	IsRepost,
+        COALESCE(u2.id in (SELECT id from temp_FOLLOWED_IDS), FALSE) 											 	IsFollowedRepost,
+        u1.id in (SELECT id from temp_FOLLOWED_IDS) 															 	IsFollowedPost,
+        EXISTS ( SELECT*FROM likes l 	WHERE l.post_id = p.id AND l.user_id = in_id AND l.deleted_at IS NULL )	 	IsLiked,
+        EXISTS ( SELECT*FROM reposts r 	WHERE post_id   = p.id AND r.user_id = in_id AND r.deleted_at IS NULL )  	IsReposted
+    FROM posts p
+    JOIN users u1 ON p.owner_id = u1.id AND u1.deleted_at IS NULL
+	LEFT JOIN media m  ON m.owner_id = u1.id AND m.owner_type = 'profilepicuser'
+    LEFT JOIN reposts r ON p.id = r.post_id AND r.user_id != in_id
+    LEFT JOIN users u2 ON r.user_id = u2.id
+    GROUP BY p.id
+    ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
+    LIMIT in_offset, in_limit;
+    
+END $$
+DELIMITER ;
+
+CALL TSP_TEST_FEED(1,0,1);
+
+SELECT users.* FROM posts LEFT OUTER JOIN users ON 1=1;
