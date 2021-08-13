@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"log"
 	"posthis/db"
 	"posthis/entity"
 	"posthis/viewmodel"
@@ -18,15 +19,25 @@ func (sm SearchModel) GetSearch(
 	searchUser bool,
 	offsetPost,
 	limitPost,
+	viewerId,
 	offsetUser,
 	limitUser uint) (*SearchVM, error) {
 
 	model := SearchVM{}
+	model.Users = make([]UserSearchVM, 0)
+	model.Posts = make([]PostSearchVM, 0)
 
 	db, err := db.ConnectToDb()
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	if !searchPost && !searchUser {
 		return nil, errors.New("you have to search at least one of the following fields: { posts, users}")
@@ -39,8 +50,9 @@ func (sm SearchModel) GetSearch(
 			posts []Post
 		)
 
-		rows, err := db.Raw("CALL SP_SEARCH_POSTS(?,?,?)", query, offsetPost, limitPost).Rows()
+		rows, err := db.Raw("CALL SP_SEARCH_POSTS(?,?,?,?)", query, viewerId, offsetPost, limitPost).Rows()
 		if err != nil {
+			log.Println("Error con datos", err.Error())
 			return nil, err
 		}
 
@@ -56,7 +68,9 @@ func (sm SearchModel) GetSearch(
 				&psmodel.Date,
 				&psmodel.LikeCount,
 				&psmodel.ReplyCount,
-				&psmodel.RepostCount)
+				&psmodel.RepostCount,
+				&psmodel.IsLiked,
+				&psmodel.IsReposted)
 
 			psmodel.PublisherProfilePic = entity.GetPath(sm.Scheme, sm.Scheme, psmodel.PublisherProfilePic)
 
@@ -89,6 +103,7 @@ func (sm SearchModel) GetSearch(
 	if searchUser {
 		rows, err := db.Raw("CALL SP_SEARCH_USERS(?,?,?)", query, offsetUser, limitUser).Rows()
 		if err != nil {
+			log.Println("Error con datos", err.Error())
 			return nil, err
 		}
 
@@ -98,7 +113,9 @@ func (sm SearchModel) GetSearch(
 				&umodel.ID,
 				&umodel.Tag,
 				&umodel.Username,
-				&umodel.ProfilePicPath)
+				&umodel.ProfilePicPath,
+				&umodel.FollowerCount,
+				&umodel.FollowingCount)
 
 			umodel.ProfilePicPath = entity.GetPath(sm.Scheme, sm.Host, umodel.ProfilePicPath)
 

@@ -79,7 +79,7 @@ func CreateReply() http.Handler {
 func UpdateReply() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		replyModel := ReplyModel{}
+		replyModel := ReplyModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 		strId := vars["id"]
@@ -98,13 +98,13 @@ func UpdateReply() http.Handler {
 		files := formdata.File["files"]
 		deleted := formdata.Value["deleted"]
 
-		reply, err := replyModel.UpdateReply(uint(id), content, deleted, files)
+		model, err := replyModel.UpdateReply(uint(id), content, deleted, files)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := SuccesVM{Data: reply, Message: "Reply updated successfully"}
+		response := SuccesVM{Data: model, Message: "Reply updated successfully"}
 
 		utils.WriteJsonResponse(w, response)
 	})

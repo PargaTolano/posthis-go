@@ -23,6 +23,13 @@ func (PostModel) GetPosts() ([]Post, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	db.Preload("Media").Find(posts)
 
 	return posts, nil
@@ -38,6 +45,13 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	query := `CALL SP_GET_POST_DETAIL(?, ?)`
 
 	err = db.Raw(query, id, userId).Row().Scan(
@@ -51,6 +65,9 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 		&model.Date,
 		&model.Content,
 		&model.RepostID,
+		&model.LikeCount,
+		&model.ReplyCount,
+		&model.RepostCount,
 		&model.IsLiked,
 		&model.IsReposted)
 	if err != nil {
@@ -87,6 +104,13 @@ func (PostModel) CreatePost(ownerId uint, content string, files []*multipart.Fil
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	db.First(&poster, ownerId)
 
 	err = utils.UploadMultipleFiles(files, &media)
@@ -116,6 +140,13 @@ func (pm PostModel) UpdatePost(userId, id uint, content string, deleted []string
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	db.First(&post, id)
 
@@ -156,6 +187,13 @@ func (PostModel) DeletePost(id uint) error {
 		return err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	defer sqlDb.Close()
+
 	db.Delete(&Post{}, id)
 	if err := db.Error; err != nil {
 		return err
@@ -174,6 +212,13 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	query := `CALL SP_GET_FEED(?,?,?)`
 
@@ -195,6 +240,9 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 			&model.Date,
 			&model.Content,
 			&model.RepostID,
+			&model.LikeCount,
+			&model.ReplyCount,
+			&model.RepostCount,
 			&model.IsLiked,
 			&model.IsReposted)
 
@@ -202,6 +250,11 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 
 		models = append(models, model)
 	}
+
+	if len(models) == 0 {
+		return make([]PostFeedVM, 0), nil
+	}
+
 	if !rows.NextResultSet() {
 		return nil, rows.Err()
 	}
@@ -244,6 +297,13 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	query := `CALL SP_GET_USER_FEED(?,?,?,?)`
 
 	rows, err := db.Raw(query, id, userId, offset, limit).Rows()
@@ -264,6 +324,9 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 			&model.Date,
 			&model.Content,
 			&model.RepostID,
+			&model.LikeCount,
+			&model.ReplyCount,
+			&model.RepostCount,
 			&model.IsLiked,
 			&model.IsReposted)
 

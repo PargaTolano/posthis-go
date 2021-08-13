@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"posthis/auth"
@@ -23,6 +24,13 @@ func (UserModel) GetUsers() ([]User, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	db.Preload("ProfilePic").Preload("CoverPic").Find(&users)
 	if db.Error != nil {
 		return nil, db.Error
@@ -39,6 +47,13 @@ func (um UserModel) GetUser(id, viewerId uint) (*UserVM, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	row := db.Raw("CALL SP_GET_PROFILE(?,?)", id, viewerId).Row()
 
@@ -71,12 +86,19 @@ func (UserModel) CreateUser(model UserCreateVM) (*User, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	user := User{Tag: model.Tag, Email: model.Email, Username: model.Username, PasswordHash: hash}
 	db.Create(&user)
 	return &user, nil
 }
 
-func (UserModel) UpdateUser(id uint, model UserUpdateVM, pfpFiles []*multipart.FileHeader, coverFiles []*multipart.FileHeader) (*User, error) {
+func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles []*multipart.FileHeader, coverFiles []*multipart.FileHeader) (*UserVM, error) {
 
 	user := User{}
 
@@ -84,6 +106,13 @@ func (UserModel) UpdateUser(id uint, model UserUpdateVM, pfpFiles []*multipart.F
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	if err = db.Preload("ProfilePic").Preload("CoverPic").First(&user, id).Error; err != nil {
 		return nil, err
@@ -129,7 +158,12 @@ func (UserModel) UpdateUser(id uint, model UserUpdateVM, pfpFiles []*multipart.F
 
 	db.Save(&user)
 
-	return &user, nil
+	umodel, err := um.GetUser(id, viewerId)
+	if err != nil {
+		return nil, err
+	}
+
+	return umodel, nil
 }
 
 func (UserModel) DeleteUser(id uint) error {
@@ -138,12 +172,41 @@ func (UserModel) DeleteUser(id uint) error {
 		return err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	defer sqlDb.Close()
+
 	db.Delete(&User{}, uint(id))
 	if db.Error != nil {
 		return db.Error
 	}
 
 	return nil
+}
+
+func (um UserModel) ValidatePassword(id uint, password string) (bool, error) {
+	user := User{}
+
+	db, err := db.ConnectToDb()
+	if err != nil {
+		return false, err
+	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return false, err
+	}
+
+	defer sqlDb.Close()
+
+	if err = db.First(&user, id).Error; err != nil {
+		return false, err
+	}
+
+	return utils.CheckPasswordHash(password, user.PasswordHash), nil
 }
 
 //return auth token info and error if there is one
@@ -156,12 +219,19 @@ func (um UserModel) Login(model UserLoginVm) (interface{}, error) {
 		return nil, err
 	}
 
-	if err := db.Where("username = ?", model.Username).Find(&user).Error; err != nil {
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
+	if err := db.Preload("ProfilePic").Where("username = ?", model.Username).Find(&user).Error; err != nil {
 		return nil, err
 	}
 
 	if !utils.CheckPasswordHash(model.Password, user.PasswordHash) {
-		return nil, err
+		return nil, errors.New("wrong password")
 	}
 
 	ts, err := auth.CreateToken(uint64(user.ID))

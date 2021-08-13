@@ -17,6 +17,13 @@ func (RepostModel) GetReposts(id uint) ([]*Repost, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	if err = db.Preload("reposts").First(&post, id).Error; err != nil {
 		return nil, err
 	}
@@ -33,6 +40,13 @@ func (rm RepostModel) CreateRepost(userId uint, postId uint) (*PostDetailVM, err
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	if err = db.First(&user, userId).Error; err != nil {
 		return nil, err
@@ -69,6 +83,13 @@ func (rm RepostModel) DeleteRepost(userId, postId uint) (*PostDetailVM, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	if err = db.First(&repost, "user_id = ? AND post_id = ?", userId, postId).Error; err != nil {
 		return nil, err

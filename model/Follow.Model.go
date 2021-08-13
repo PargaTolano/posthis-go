@@ -17,6 +17,13 @@ func (FollowModel) GetFollows(id uint) ([]User, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	db.Joins("JOIN follows ON follows.follower_id = users.id AND follows.followed_id = ?", id).Find(&users)
 	if db.Error != nil {
 		return nil, err
@@ -33,6 +40,13 @@ func (FollowModel) GetFollowing(id uint) ([]User, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	db.Joins("JOIN follows ON follows.follower_id = users.id AND follows.follower_id = ?", id).Find(&users)
 	if db.Error != nil {
 		return nil, err
@@ -41,8 +55,9 @@ func (FollowModel) GetFollowing(id uint) ([]User, error) {
 	return users, nil
 }
 
-func (FollowModel) CreateFollow(id, followerId uint) (*Follow, error) {
+func (fm FollowModel) CreateFollow(id, followerId uint) (*UserVM, error) {
 
+	userModel := UserModel(fm)
 	user := User{}
 	follower := User{}
 
@@ -50,6 +65,13 @@ func (FollowModel) CreateFollow(id, followerId uint) (*Follow, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	db.First(&user, id)
 	db.First(&follower, followerId)
@@ -65,24 +87,41 @@ func (FollowModel) CreateFollow(id, followerId uint) (*Follow, error) {
 	db.Model(&user).Association("followers").Append(&follow)
 	db.Model(&follower).Association("followings").Append(&follow)
 
-	return &follow, nil
+	model, err := userModel.GetUser(id, followerId)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
-func (FollowModel) DeleteFollow(followerid uint, followedId uint) error {
+func (fm FollowModel) DeleteFollow(followerId uint, followedId uint) (*UserVM, error) {
 
-	followed := User{}
-	follower := User{}
+	userModel := UserModel(fm)
+	follow := Follow{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	db.First(&follower, followerid)
-	db.First(&followed, followedId)
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
 
-	db.Model(&follower).Association("Followings").Delete(&followed)
-	db.Model(&followed).Association("Followers").Delete(&follower)
+	defer sqlDb.Close()
 
-	return nil
+	if err = db.First(&follow, "follower_id = ? AND followed_id = ?", followerId, followedId).Error; err != nil {
+		return nil, err
+	}
+
+	db.Delete(&follow)
+
+	model, err := userModel.GetUser(followedId, followerId)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }

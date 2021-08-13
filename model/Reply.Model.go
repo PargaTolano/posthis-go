@@ -25,6 +25,13 @@ func (rm ReplyModel) GetReplies(id uint) ([]ReplyVM, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	rows, err := db.Raw("CALL SP_GET_POST_REPLIES(?)", id).Rows()
 	if err != nil {
 		return nil, err
@@ -88,6 +95,13 @@ func (ReplyModel) CreateReply(userId, postId uint, content string, files []*mult
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	if err = db.First(&user, userId).Error; err != nil {
 		return nil, err
 	}
@@ -111,8 +125,9 @@ func (ReplyModel) CreateReply(userId, postId uint, content string, files []*mult
 	return &reply, nil
 }
 
-func (ReplyModel) UpdateReply(id uint, content string, deleted []string, files []*multipart.FileHeader) (*Reply, error) {
+func (rm ReplyModel) UpdateReply(id uint, content string, deleted []string, files []*multipart.FileHeader) (*ReplyVM, error) {
 
+	user := User{}
 	reply := Reply{}
 	deletedMedia := []*Media{}
 
@@ -121,19 +136,28 @@ func (ReplyModel) UpdateReply(id uint, content string, deleted []string, files [
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	if err := db.First(&reply, id).Error; err != nil {
 		return nil, err
 	}
 
-	if err = db.Find(&reply, id).Error; err != nil {
+	if err = db.Preload("ProfilePic").Find(&user, reply.UserID).Error; err != nil {
 		return nil, err
 	}
 
-	db.Find(&deletedMedia, deleted)
-	for _, dm := range deletedMedia {
-		utils.DeleteStaticFile(dm.Name)
+	if len(deleted) > 0 {
+		db.Find(&deletedMedia, deleted)
+		for _, dm := range deletedMedia {
+			utils.DeleteStaticFile(dm.Name)
+		}
+		db.Delete(&deletedMedia)
 	}
-	db.Delete(&deletedMedia)
 
 	if len(files) >= 1 {
 		media := []*Media{}
@@ -152,7 +176,30 @@ func (ReplyModel) UpdateReply(id uint, content string, deleted []string, files [
 
 	db.Save(&reply)
 
-	return &reply, nil
+	model := ReplyVM{
+		ReplyID:           reply.ID,
+		Content:           reply.Content,
+		PostID:            reply.PostID,
+		PublisherID:       reply.UserID,
+		PublisherUserName: user.Username,
+		Date:              reply.CreatedAt}
+
+	if user.ProfilePic != nil {
+		model.PublisherProfilePic = user.ProfilePic.GetPath(rm.Scheme, rm.Host)
+	}
+
+	for i := range reply.Media {
+
+		mvm := MediaVM{
+			ID:      reply.Media[i].ID,
+			Path:    reply.Media[i].GetPath(rm.Scheme, rm.Host),
+			Mime:    reply.Media[i].Mime,
+			IsVideo: strings.Contains(reply.Media[i].Mime, "video")}
+
+		model.Medias = append(model.Medias, mvm)
+	}
+
+	return &model, nil
 }
 
 func (ReplyModel) DeleteReply(id uint) error {
@@ -161,6 +208,13 @@ func (ReplyModel) DeleteReply(id uint) error {
 	if err != nil {
 		return err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	defer sqlDb.Close()
 
 	if err = db.Delete(&Reply{}, id).Error; err != nil {
 		return err

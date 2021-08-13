@@ -84,7 +84,7 @@ func CreateUser() http.Handler {
 func UpdateUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		userModel := UserModel{}
+		userModel := UserModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -112,9 +112,11 @@ func UpdateUser() http.Handler {
 			return
 		}
 
+		viewerId := context.Get(r, "userId").(uint64)
+
 		model := UserUpdateVM{Tag: r.FormValue("tag"), Email: r.FormValue("email"), Username: r.FormValue("username"), Password: r.FormValue("password")}
 
-		user, err := userModel.UpdateUser(uint(id), model, pfpFiles, coverFiles)
+		user, err := userModel.UpdateUser(uint(id), uint(viewerId), model, pfpFiles, coverFiles)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -145,6 +147,26 @@ func DeleteUser() http.Handler {
 
 		response := SuccesVM{Data: nil, Message: "User Deleted Succesfully!"}
 
+		utils.WriteJsonResponse(w, response)
+	})
+}
+
+func ValidatePassword() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userModel := UserModel{}
+
+		vars := mux.Vars(r)
+		password := vars["password"]
+
+		id := context.Get(r, "userId").(uint64)
+
+		validated, err := userModel.ValidatePassword(uint(id), password)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := SuccesVM{Data: validated, Message: "Retrieved Password Validation Succesfully"}
 		utils.WriteJsonResponse(w, response)
 	})
 }

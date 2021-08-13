@@ -12,9 +12,6 @@ import (
 	"github.com/rs/cors"
 )
 
-//TODO
-// PREVENT SOFT DELETES IN LIKES, REPLIES, REPOSTS, MEDIA AND FOLLOWS
-
 func initRoutes() http.Handler {
 
 	r := mux.NewRouter()
@@ -45,6 +42,7 @@ func initRoutes() http.Handler {
 	r.Handle("/api/users-create", controller.CreateUser()).Methods("POST")
 	r.Handle("/api/users-update/{id}", auth.TokenAuthMiddleware(controller.UpdateUser())).Methods("PUT")
 	r.Handle("/api/users-delete/{id}", auth.TokenAuthMiddleware(controller.DeleteUser())).Methods("DELETE")
+	r.Handle("/api/validate-password/{password}", auth.TokenAuthMiddleware(controller.ValidatePassword())).Methods("GET")
 	r.Handle("/api/login", controller.Login()).Methods("POST")
 	r.Handle("/api/logout", auth.TokenAuthMiddleware(controller.Logout())).Methods("POST")
 
@@ -89,5 +87,6 @@ func main() {
 	handler := cors.AllowAll().Handler(mux)
 
 	log.Println("Starting server on :4000")
+
 	log.Fatal(http.ListenAndServe(":4000", handler))
 }

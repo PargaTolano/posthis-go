@@ -68,7 +68,7 @@ func GetFollowing() http.Handler {
 func CreateFollow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		followModel := FollowModel{}
+		followModel := FollowModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -97,7 +97,7 @@ func CreateFollow() http.Handler {
 func DeleteFollow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		followModel := FollowModel{}
+		followModel := FollowModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 		strId := vars["id"]
@@ -110,13 +110,13 @@ func DeleteFollow() http.Handler {
 
 		followerId := context.Get(r, "userId").(uint64)
 
-		err = followModel.DeleteFollow(uint(followerId), uint(id))
+		model, err := followModel.DeleteFollow(uint(followerId), uint(id))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := SuccesVM{Data: nil, Message: "Follow deleted successfully"}
+		response := SuccesVM{Data: model, Message: "Follow deleted successfully"}
 
 		utils.WriteJsonResponse(w, response)
 	})

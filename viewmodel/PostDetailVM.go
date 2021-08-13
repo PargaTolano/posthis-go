@@ -16,6 +16,9 @@ type PostDetailVM struct {
 	Content             string    `json:"content"`
 	Media               []MediaVM `json:"medias"`
 	RepostID            uint      `json:"isRepost"`
+	LikeCount           int       `json:"likeCount"`
+	ReplyCount          int       `json:"replyCount"`
+	RepostCount         int       `json:"repostCount"`
 	IsLiked             bool      `json:"isLiked"`
 	IsReposted          bool      `json:"isReposted"`
 }

@@ -1,13 +1,15 @@
 package entity
 
 import (
-	"gorm.io/gorm"
+	"time"
 )
 
 type Reply struct {
-	gorm.Model
-	Content string   `gorm:"default:''"`
-	UserID  uint     //User.ID
-	PostID  uint     //Post.ID
-	Media   []*Media `gorm:"polymorphic:Owner;polymorphicValue:reply"`
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Content   string   `gorm:"default:''"`
+	UserID    uint     //User.ID
+	PostID    uint     //Post.ID
+	Media     []*Media `gorm:"polymorphic:Owner;polymorphicValue:reply"`
 }

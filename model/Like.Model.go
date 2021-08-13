@@ -17,6 +17,13 @@ func (LikeModel) GetLikes(id uint) ([]*Like, error) {
 		return nil, err
 	}
 
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
+
 	if err = db.Preload("Likes").First(&post, id).Error; err != nil {
 		return nil, err
 	}
@@ -33,6 +40,13 @@ func (lm LikeModel) CreateLike(userId, postId uint) (*PostDetailVM, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	if err = db.First(&user, userId).Error; err != nil {
 		return nil, err
@@ -70,6 +84,13 @@ func (lm LikeModel) DeleteLike(userId, postId uint) (*PostDetailVM, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	defer sqlDb.Close()
 
 	if err = db.First(&like, "user_id = ? AND post_id = ?", userId, postId).Error; err != nil {
 		return nil, err

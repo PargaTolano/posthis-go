@@ -1,11 +1,13 @@
 package entity
 
 import (
-	"gorm.io/gorm"
+	"time"
 )
 
 type Like struct {
-	gorm.Model
-	UserID uint //User.ID
-	PostID uint //Post.ID
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	UserID    uint //User.ID
+	PostID    uint //Post.ID
 }

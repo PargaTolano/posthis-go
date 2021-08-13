@@ -7,6 +7,7 @@ import (
 
 	"posthis/utils"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -80,12 +81,15 @@ func GetSearch() http.Handler {
 			return
 		}
 
+		viewerId := context.Get(r, "userId").(uint64)
+
 		model, err := searchModel.GetSearch(
 			query,
 			searchPost,
 			searchUser,
 			uint(offsetPost),
 			uint(limitPost),
+			uint(viewerId),
 			uint(offsetUser),
 			uint(limitUser))
 		if err != nil {

@@ -1,9 +1,13 @@
 package entity
 
-import "gorm.io/gorm"
+import (
+	"time"
+)
 
 type Media struct {
-	gorm.Model
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 	Mime      string
 	Name      string
 	OwnerID   int

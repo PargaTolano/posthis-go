@@ -1,6 +1,6 @@
 package viewmodel
 
 type SearchVM struct {
-	Users []UserSearchVM
-	Posts []PostSearchVM
+	Users []UserSearchVM `json:"users"`
+	Posts []PostSearchVM `json:"posts"`
 }
