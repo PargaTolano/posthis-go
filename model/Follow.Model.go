@@ -2,15 +2,16 @@ package model
 
 import (
 	"posthis/db"
+	"posthis/entity"
 )
 
 type FollowModel struct {
 	Model
 }
 
-func (FollowModel) GetFollows(id uint) ([]User, error) {
+func (fm FollowModel) GetFollows(id, viewerId uint) ([]FollowUserVM, error) {
 
-	users := []User{}
+	models := []FollowUserVM{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
@@ -24,16 +25,30 @@ func (FollowModel) GetFollows(id uint) ([]User, error) {
 
 	defer sqlDb.Close()
 
-	db.Joins("JOIN follows ON follows.follower_id = users.id AND follows.followed_id = ?", id).Find(&users)
-	if db.Error != nil {
+	rows, err := db.Raw("CALL SP_GET_FOLLOWERS(?,?)", id, viewerId).Rows()
+	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	for rows.Next() {
+		model := FollowUserVM{}
+		rows.Scan(
+			&model.ID,
+			&model.Username,
+			&model.Tag,
+			&model.ProfilePicPath,
+			&model.IsFollowed,
+		)
+
+		model.ProfilePicPath = entity.GetPath(fm.Scheme, fm.Host, model.ProfilePicPath)
+
+		models = append(models, model)
+	}
+	return models, nil
 }
 
-func (FollowModel) GetFollowing(id uint) ([]User, error) {
-	users := []User{}
+func (fm FollowModel) GetFollowing(id, viewerId uint) ([]FollowUserVM, error) {
+	models := []FollowUserVM{}
 
 	db, err := db.ConnectToDb()
 	if err != nil {
@@ -47,12 +62,26 @@ func (FollowModel) GetFollowing(id uint) ([]User, error) {
 
 	defer sqlDb.Close()
 
-	db.Joins("JOIN follows ON follows.follower_id = users.id AND follows.follower_id = ?", id).Find(&users)
-	if db.Error != nil {
+	rows, err := db.Raw("CALL SP_GET_FOLLOWING(?,?)", id, viewerId).Rows()
+	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	for rows.Next() {
+		model := FollowUserVM{}
+		rows.Scan(
+			&model.ID,
+			&model.Username,
+			&model.Tag,
+			&model.ProfilePicPath,
+			&model.IsFollowed,
+		)
+
+		model.ProfilePicPath = entity.GetPath(fm.Scheme, fm.Host, model.ProfilePicPath)
+
+		models = append(models, model)
+	}
+	return models, nil
 }
 
 func (fm FollowModel) CreateFollow(id, followerId uint) (*UserVM, error) {

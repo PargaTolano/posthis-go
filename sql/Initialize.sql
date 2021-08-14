@@ -32,6 +32,50 @@ BEGIN
 END $$
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS SP_GET_FOLLOWERS;
+DELIMITER $$
+CREATE PROCEDURE SP_GET_FOLLOWERS
+(
+	IN in_id 			INT,
+    IN in_viewer_id 	INT
+)
+BEGIN
+	SELECT 
+		u.id 								id,
+		u.username							username,
+        u.tag								tag,
+        COALESCE(m.name,'') 				profilepicpath,
+		MAX( COALESCE( f2.id, FALSE )) > 0  isFollowed
+	FROM 		users u
+    JOIN		follows f 	ON f.followed_id  = u.id AND f.followed_id = in_id
+    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicpath'
+    LEFT JOIN 	follows f2 	ON f2.follower_id = in_viewer_id
+    GROUP BY u.id;
+END $$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS SP_GET_FOLLOWING;
+DELIMITER $$
+CREATE PROCEDURE SP_GET_FOLLOWING
+(
+	IN in_id 			INT,
+    IN in_viewer_id 	INT
+)
+BEGIN
+	SELECT 
+		u.id 								id,
+		u.username							username,
+        u.tag								tag,
+        COALESCE(m.name,'') 				profilepicpath,
+		MAX( COALESCE( f2.id, FALSE )) > 0  isFollowed
+	FROM 		users u
+    JOIN		follows f 	ON f.follower_id  = u.id AND f.follower_id = in_id
+    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicpath'
+    LEFT JOIN 	follows f2 	ON f2.follower_id = in_viewer_id
+    GROUP BY u.id;
+END $$
+DELIMITER ;
+
 DROP PROCEDURE IF EXISTS SP_GET_POST_DETAIL;
 DELIMITER $$
 CREATE PROCEDURE SP_GET_POST_DETAIL

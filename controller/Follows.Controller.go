@@ -14,7 +14,7 @@ import (
 func GetFollows() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		followModel := FollowModel{}
+		followModel := FollowModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -26,7 +26,9 @@ func GetFollows() http.Handler {
 			return
 		}
 
-		users, err := followModel.GetFollows(uint(id))
+		viewerId := context.Get(r, "userId").(uint64)
+
+		users, err := followModel.GetFollows(uint(id), uint(viewerId))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -41,7 +43,7 @@ func GetFollows() http.Handler {
 func GetFollowing() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		followModel := FollowModel{}
+		followModel := FollowModel{Model: Model{Scheme: r.URL.Scheme, Host: r.URL.Host}}
 
 		vars := mux.Vars(r)
 
@@ -52,7 +54,9 @@ func GetFollowing() http.Handler {
 			return
 		}
 
-		users, err := followModel.GetFollowing(uint(id))
+		viewerId := context.Get(r, "userId").(uint64)
+
+		users, err := followModel.GetFollowing(uint(id), uint(viewerId))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

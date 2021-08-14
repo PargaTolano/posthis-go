@@ -29,3 +29,4 @@ type UserLoginVm = viewmodel.UserLoginVM
 type UserUpdateVM = viewmodel.UserUpdateVM
 type UserVM = viewmodel.UserVM
 type ReplyVM = viewmodel.ReplyVM
+type FollowUserVM = viewmodel.FollowUserVM
