@@ -2,7 +2,7 @@ package model
 
 import (
 	"mime/multipart"
-	"posthis/db"
+	"posthis/database"
 	"posthis/entity"
 	"posthis/utils"
 	"strings"
@@ -18,19 +18,7 @@ func (PostModel) GetPosts() ([]Post, error) {
 
 	posts := []Post{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	db.Preload("Media").Find(posts)
+	database.DB.Preload("Media").Find(posts)
 
 	return posts, nil
 }
@@ -40,21 +28,9 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 	post := Post{}
 	model := PostDetailVM{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
 	query := `CALL SP_GET_POST_DETAIL(?, ?)`
 
-	err = db.Raw(query, id, userId).Row().Scan(
+	err := database.DB.Raw(query, id, userId).Row().Scan(
 		&model.ID,
 		&model.PublisherID,
 		&model.PublisherUserName,
@@ -76,7 +52,7 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 
 	model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
 
-	db.Preload("Media").First(&post, id)
+	database.DB.Preload("Media").First(&post, id)
 
 	for i := range post.Media {
 
@@ -99,31 +75,19 @@ func (PostModel) CreatePost(ownerId uint, content string, files []*multipart.Fil
 		media  []*Media
 	)
 
-	db, err := db.ConnectToDb()
+	database.DB.First(&poster, ownerId)
+
+	err := utils.UploadMultipleFiles(files, &media)
 	if err != nil {
 		return nil, err
 	}
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	db.First(&poster, ownerId)
-
-	err = utils.UploadMultipleFiles(files, &media)
-	if err != nil {
-		return nil, err
-	}
-
-	db.CreateInBatches(&media, len(media))
+	database.DB.CreateInBatches(&media, len(media))
 
 	post = Post{Content: content, Media: media}
 
-	db.Create(&post)
-	db.Model(&poster).Association("Posts").Append(&post)
+	database.DB.Create(&post)
+	database.DB.Model(&poster).Association("Posts").Append(&post)
 
 	return &post, nil
 }
@@ -136,41 +100,29 @@ func (pm PostModel) UpdatePost(userId, id uint, content string, deleted []string
 		deletedMedia []*Media
 	)
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
+	database.DB.First(&post, id)
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	db.First(&post, id)
-
-	db.Find(&deletedMedia, deleted)
+	database.DB.Find(&deletedMedia, deleted)
 	for _, dm := range deletedMedia {
 		utils.DeleteStaticFile(dm.Name)
 	}
-	db.Delete(&deletedMedia)
+	database.DB.Delete(&deletedMedia)
 
 	if len(files) >= 1 {
-		err = utils.UploadMultipleFiles(files, &media)
+		err := utils.UploadMultipleFiles(files, &media)
 		if err != nil {
 			return nil, err
 		}
 
-		db.CreateInBatches(&media, len(media))
-		db.Model(&post).Association("Media").Append(media)
+		database.DB.CreateInBatches(&media, len(media))
+		database.DB.Model(&post).Association("Media").Append(media)
 	}
 
 	if content != "" {
 		post.Content = content
 	}
 
-	db.Save(&post)
+	database.DB.Save(&post)
 
 	model, err := pm.GetPost(userId, post.ID)
 	if err != nil {
@@ -182,20 +134,8 @@ func (pm PostModel) UpdatePost(userId, id uint, content string, deleted []string
 
 func (PostModel) DeletePost(id uint) error {
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return err
-	}
-
-	defer sqlDb.Close()
-
-	db.Delete(&Post{}, id)
-	if err := db.Error; err != nil {
+	database.DB.Delete(&Post{}, id)
+	if err := database.DB.Error; err != nil {
 		return err
 	}
 
@@ -208,21 +148,9 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 	postIds := []uint{}
 	posts := []Post{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
 	query := `CALL SP_GET_FEED(?,?,?)`
 
-	rows, err := db.Raw(query, id, offset, limit).Rows()
+	rows, err := database.DB.Raw(query, id, offset, limit).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +194,7 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 		postIds = append(postIds, id)
 	}
 
-	db.Preload("Media").Clauses(clause.OrderBy{
+	database.DB.Preload("Media").Clauses(clause.OrderBy{
 		Expression: clause.Expr{SQL: "FIELD(id,?)", Vars: []interface{}{postIds}, WithoutParentheses: true},
 	}).Find(&posts, postIds)
 
@@ -292,21 +220,9 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 	postIds := []uint{}
 	posts := []Post{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
 	query := `CALL SP_GET_USER_FEED(?,?,?,?)`
 
-	rows, err := db.Raw(query, id, userId, offset, limit).Rows()
+	rows, err := database.DB.Raw(query, id, userId, offset, limit).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +261,7 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 		postIds = append(postIds, id)
 	}
 
-	db.Preload("Media").Clauses(clause.OrderBy{
+	database.DB.Preload("Media").Clauses(clause.OrderBy{
 		Expression: clause.Expr{SQL: "FIELD(id,?)", Vars: []interface{}{postIds}, WithoutParentheses: true},
 	}).Find(&posts, postIds)
 

@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"posthis/auth"
-	"posthis/db"
+	"posthis/database"
 	"posthis/entity"
 	"posthis/utils"
 )
@@ -19,21 +19,9 @@ func (UserModel) GetUsers() ([]User, error) {
 		users []User
 	)
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	db.Preload("ProfilePic").Preload("CoverPic").Find(&users)
-	if db.Error != nil {
-		return nil, db.Error
+	database.DB.Preload("ProfilePic").Preload("CoverPic").Find(&users)
+	if database.DB.Error != nil {
+		return nil, database.DB.Error
 	}
 
 	return users, nil
@@ -43,19 +31,7 @@ func (um UserModel) GetUser(id, viewerId uint) (*UserVM, error) {
 
 	model := UserVM{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	row := db.Raw("CALL SP_GET_PROFILE(?,?)", id, viewerId).Row()
+	row := database.DB.Raw("CALL SP_GET_PROFILE(?,?)", id, viewerId).Row()
 
 	row.Scan(
 		&model.ID,
@@ -81,20 +57,8 @@ func (UserModel) CreateUser(model UserCreateVM) (*User, error) {
 		return nil, err
 	}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
 	user := User{Tag: model.Tag, Email: model.Email, Username: model.Username, PasswordHash: hash}
-	db.Create(&user)
+	database.DB.Create(&user)
 	return &user, nil
 }
 
@@ -102,19 +66,7 @@ func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles [
 
 	user := User{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	if err = db.Preload("ProfilePic").Preload("CoverPic").First(&user, id).Error; err != nil {
+	if err := database.DB.Preload("ProfilePic").Preload("CoverPic").First(&user, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -135,12 +87,12 @@ func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles [
 
 		if user.ProfilePic != nil {
 			utils.DeleteStaticFile(user.ProfilePic.Name)
-			db.Delete(&user.ProfilePic)
+			database.DB.Delete(&user.ProfilePic)
 		}
 
 		utils.UploadMultipleFiles(pfpFiles, &media)
-		db.CreateInBatches(&media, len(media))
-		db.Model(&user).Association("ProfilePic").Append(&media)
+		database.DB.CreateInBatches(&media, len(media))
+		database.DB.Model(&user).Association("ProfilePic").Append(&media)
 	}
 
 	if len(coverFiles) == 1 {
@@ -148,15 +100,15 @@ func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles [
 
 		if user.CoverPic != nil {
 			utils.DeleteStaticFile(user.CoverPic.Name)
-			db.Delete(&user.CoverPic)
+			database.DB.Delete(&user.CoverPic)
 		}
 
 		utils.UploadMultipleFiles(coverFiles, &media)
-		db.CreateInBatches(&media, len(media))
-		db.Model(&user).Association("CoverPic").Append(&media)
+		database.DB.CreateInBatches(&media, len(media))
+		database.DB.Model(&user).Association("CoverPic").Append(&media)
 	}
 
-	db.Save(&user)
+	database.DB.Save(&user)
 
 	umodel, err := um.GetUser(id, viewerId)
 	if err != nil {
@@ -167,21 +119,10 @@ func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles [
 }
 
 func (UserModel) DeleteUser(id uint) error {
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return err
-	}
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		return err
-	}
-
-	defer sqlDb.Close()
-
-	db.Delete(&User{}, uint(id))
-	if db.Error != nil {
-		return db.Error
+	database.DB.Delete(&User{}, id)
+	if database.DB.Error != nil {
+		return database.DB.Error
 	}
 
 	return nil
@@ -190,19 +131,7 @@ func (UserModel) DeleteUser(id uint) error {
 func (um UserModel) ValidatePassword(id uint, password string) (bool, error) {
 	user := User{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return false, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return false, err
-	}
-
-	defer sqlDb.Close()
-
-	if err = db.First(&user, id).Error; err != nil {
+	if err := database.DB.First(&user, id).Error; err != nil {
 		return false, err
 	}
 
@@ -214,19 +143,7 @@ func (um UserModel) Login(model UserLoginVm) (interface{}, error) {
 
 	user := User{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	if err := db.Preload("ProfilePic").Where("username = ?", model.Username).Find(&user).Error; err != nil {
+	if err := database.DB.Preload("ProfilePic").Where("username = ?", model.Username).Find(&user).Error; err != nil {
 		return nil, err
 	}
 

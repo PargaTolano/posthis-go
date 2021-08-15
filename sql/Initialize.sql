@@ -41,14 +41,14 @@ CREATE PROCEDURE SP_GET_FOLLOWERS
 )
 BEGIN
 	SELECT 
-		u.id 								id,
-		u.username							username,
-        u.tag								tag,
-        COALESCE(m.name,'') 				profilepicpath,
-		MAX( COALESCE( f2.id, FALSE )) > 0  isFollowed
+		u.id 												id,
+		u.username											username,
+        u.tag												tag,
+        COALESCE(m.name,'') 								profilepicpath,
+		MAX( COALESCE( f2.id <> in_viewer_id, FALSE )) > 0  isFollowed
 	FROM 		users u
-    JOIN		follows f 	ON f.followed_id  = u.id AND f.followed_id = in_id
-    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicpath'
+    JOIN		follows f 	ON f.follower_id  = u.id AND f.followed_id = in_id
+    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicuser'
     LEFT JOIN 	follows f2 	ON f2.follower_id = in_viewer_id
     GROUP BY u.id;
 END $$
@@ -67,10 +67,10 @@ BEGIN
 		u.username							username,
         u.tag								tag,
         COALESCE(m.name,'') 				profilepicpath,
-		MAX( COALESCE( f2.id, FALSE )) > 0  isFollowed
+		MAX( COALESCE( f2.id <> in_viewer_id, FALSE )) > 0  isFollowed
 	FROM 		users u
-    JOIN		follows f 	ON f.follower_id  = u.id AND f.follower_id = in_id
-    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicpath'
+    JOIN		follows f 	ON f.followed_id  = u.id AND f.follower_id = in_id
+    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicuser'
     LEFT JOIN 	follows f2 	ON f2.follower_id = in_viewer_id
     GROUP BY u.id;
 END $$

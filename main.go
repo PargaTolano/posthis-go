@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"posthis/auth"
 	"posthis/controller"
-	"posthis/db"
+	"posthis/database"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -74,13 +75,17 @@ func initRoutes() http.Handler {
 func main() {
 
 	//Load enviroment variables
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		log.Panic(err)
+		os.Exit(1)
+	}
 
 	//Init auth redis Database
 	auth.Init()
 
 	//Init gorm
-	db.InitDB()
+	database.InitDB()
 
 	mux := initRoutes()
 

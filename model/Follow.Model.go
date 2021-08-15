@@ -1,7 +1,7 @@
 package model
 
 import (
-	"posthis/db"
+	"posthis/database"
 	"posthis/entity"
 )
 
@@ -13,19 +13,7 @@ func (fm FollowModel) GetFollows(id, viewerId uint) ([]FollowUserVM, error) {
 
 	models := []FollowUserVM{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	rows, err := db.Raw("CALL SP_GET_FOLLOWERS(?,?)", id, viewerId).Rows()
+	rows, err := database.DB.Raw("CALL SP_GET_FOLLOWERS(?,?)", id, viewerId).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -50,19 +38,7 @@ func (fm FollowModel) GetFollows(id, viewerId uint) ([]FollowUserVM, error) {
 func (fm FollowModel) GetFollowing(id, viewerId uint) ([]FollowUserVM, error) {
 	models := []FollowUserVM{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	rows, err := db.Raw("CALL SP_GET_FOLLOWING(?,?)", id, viewerId).Rows()
+	rows, err := database.DB.Raw("CALL SP_GET_FOLLOWING(?,?)", id, viewerId).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -90,31 +66,19 @@ func (fm FollowModel) CreateFollow(id, followerId uint) (*UserVM, error) {
 	user := User{}
 	follower := User{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
+	database.DB.First(&user, id)
+	database.DB.First(&follower, followerId)
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	db.First(&user, id)
-	db.First(&follower, followerId)
-
-	if db.Error != nil {
-		return nil, db.Error
+	if database.DB.Error != nil {
+		return nil, database.DB.Error
 	}
 
 	follow := Follow{FollowerID: follower.ID, FollowedID: user.ID}
-	if err = db.FirstOrCreate(&follow).Error; err != nil {
+	if err := database.DB.FirstOrCreate(&follow).Error; err != nil {
 		return nil, err
 	}
-	db.Model(&user).Association("followers").Append(&follow)
-	db.Model(&follower).Association("followings").Append(&follow)
+	database.DB.Model(&user).Association("followers").Append(&follow)
+	database.DB.Model(&follower).Association("followings").Append(&follow)
 
 	model, err := userModel.GetUser(id, followerId)
 	if err != nil {
@@ -129,23 +93,11 @@ func (fm FollowModel) DeleteFollow(followerId uint, followedId uint) (*UserVM, e
 	userModel := UserModel(fm)
 	follow := Follow{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
+	if err := database.DB.First(&follow, "follower_id = ? AND followed_id = ?", followerId, followedId).Error; err != nil {
 		return nil, err
 	}
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	if err = db.First(&follow, "follower_id = ? AND followed_id = ?", followerId, followedId).Error; err != nil {
-		return nil, err
-	}
-
-	db.Delete(&follow)
+	database.DB.Delete(&follow)
 
 	model, err := userModel.GetUser(followedId, followerId)
 	if err != nil {

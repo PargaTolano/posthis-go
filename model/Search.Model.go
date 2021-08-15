@@ -3,7 +3,7 @@ package model
 import (
 	"errors"
 	"log"
-	"posthis/db"
+	"posthis/database"
 	"posthis/entity"
 	"posthis/viewmodel"
 	"strings"
@@ -27,18 +27,6 @@ func (sm SearchModel) GetSearch(
 	model.Users = make([]UserSearchVM, 0)
 	model.Posts = make([]PostSearchVM, 0)
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
 	if !searchPost && !searchUser {
 		return nil, errors.New("you have to search at least one of the following fields: { posts, users}")
 	}
@@ -50,7 +38,7 @@ func (sm SearchModel) GetSearch(
 			posts []Post
 		)
 
-		rows, err := db.Raw("CALL SP_SEARCH_POSTS(?,?,?,?)", query, viewerId, offsetPost, limitPost).Rows()
+		rows, err := database.DB.Raw("CALL SP_SEARCH_POSTS(?,?,?,?)", query, viewerId, offsetPost, limitPost).Rows()
 		if err != nil {
 			log.Println("Error con datos", err.Error())
 			return nil, err
@@ -86,7 +74,7 @@ func (sm SearchModel) GetSearch(
 		}
 
 		//relate media to viemodel
-		db.Preload("Media").Find(&posts, ids)
+		database.DB.Preload("Media").Find(&posts, ids)
 
 		for i := range posts {
 			for j := range posts[i].Media {
@@ -101,7 +89,7 @@ func (sm SearchModel) GetSearch(
 	}
 
 	if searchUser {
-		rows, err := db.Raw("CALL SP_SEARCH_USERS(?,?,?)", query, offsetUser, limitUser).Rows()
+		rows, err := database.DB.Raw("CALL SP_SEARCH_USERS(?,?,?)", query, offsetUser, limitUser).Rows()
 		if err != nil {
 			log.Println("Error con datos", err.Error())
 			return nil, err

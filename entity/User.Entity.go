@@ -14,8 +14,8 @@ type User struct {
 	ProfilePic *Media    `gorm:"polymorphic:Owner;polymorphicValue:profilepicuser"`
 	CoverPic   *Media    `gorm:"polymorphic:Owner;polymorphicValue:coverpicuser"`
 	Posts      []*Post   `gorm:"polymorphic:Owner;polymorphicValue:user"`
-	Followers  []*Follow `gorm:"foreignKey:FollowedID"`
-	Following  []*Follow `gorm:"foreignKey:FollowerID"`
+	Followers  []*Follow `gorm:"foreignKey:FollowerID"`
+	Following  []*Follow `gorm:"foreignKey:FollowedID"`
 	Likes      []*Like   `gorm:"foreignKey:UserID"`
 	Replies    []*Reply  `gorm:"foreignKey:UserID"`
 	Reposts    []*Repost `gorm:"foreignKey:UserID"`

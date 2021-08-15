@@ -2,7 +2,7 @@ package model
 
 import (
 	"mime/multipart"
-	"posthis/db"
+	"posthis/database"
 	"posthis/entity"
 	"posthis/utils"
 	"strings"
@@ -20,19 +20,7 @@ func (rm ReplyModel) GetReplies(id uint) ([]ReplyVM, error) {
 	models := []ReplyVM{}
 	replyIds := []uint{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	rows, err := db.Raw("CALL SP_GET_POST_REPLIES(?)", id).Rows()
+	rows, err := database.DB.Raw("CALL SP_GET_POST_REPLIES(?)", id).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +52,7 @@ func (rm ReplyModel) GetReplies(id uint) ([]ReplyVM, error) {
 		replyIds = append(replyIds, id)
 	}
 
-	db.Preload("Media").Clauses(clause.OrderBy{
+	database.DB.Preload("Media").Clauses(clause.OrderBy{
 		Expression: clause.Expr{SQL: "FIELD(id,?)", Vars: []interface{}{replyIds}, WithoutParentheses: true},
 	}).Find(&replies, replyIds)
 
@@ -90,37 +78,25 @@ func (ReplyModel) CreateReply(userId, postId uint, content string, files []*mult
 	post := Post{}
 	media := []*Media{}
 
-	db, err := db.ConnectToDb()
+	if err := database.DB.First(&user, userId).Error; err != nil {
+		return nil, err
+	}
+
+	if err := database.DB.First(&post, postId).Error; err != nil {
+		return nil, err
+	}
+
+	err := utils.UploadMultipleFiles(files, &media)
 	if err != nil {
 		return nil, err
 	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	if err = db.First(&user, userId).Error; err != nil {
-		return nil, err
-	}
-
-	if err = db.First(&post, postId).Error; err != nil {
-		return nil, err
-	}
-
-	err = utils.UploadMultipleFiles(files, &media)
-	if err != nil {
-		return nil, err
-	}
-	db.CreateInBatches(&media, len(media))
+	database.DB.CreateInBatches(&media, len(media))
 
 	reply := Reply{Content: content, Media: media, UserID: userId, PostID: postId}
 
-	db.Create(&reply)
-	db.Model(&user).Association("replies").Append(&reply)
-	db.Model(&post).Association("replies").Append(&reply)
+	database.DB.Create(&reply)
+	database.DB.Model(&user).Association("replies").Append(&reply)
+	database.DB.Model(&post).Association("replies").Append(&reply)
 
 	return &reply, nil
 }
@@ -131,50 +107,38 @@ func (rm ReplyModel) UpdateReply(id uint, content string, deleted []string, file
 	reply := Reply{}
 	deletedMedia := []*Media{}
 
-	db, err := db.ConnectToDb()
-	if err != nil {
+	if err := database.DB.First(&reply, id).Error; err != nil {
 		return nil, err
 	}
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	defer sqlDb.Close()
-
-	if err := db.First(&reply, id).Error; err != nil {
-		return nil, err
-	}
-
-	if err = db.Preload("ProfilePic").Find(&user, reply.UserID).Error; err != nil {
+	if err := database.DB.Preload("ProfilePic").Find(&user, reply.UserID).Error; err != nil {
 		return nil, err
 	}
 
 	if len(deleted) > 0 {
-		db.Find(&deletedMedia, deleted)
+		database.DB.Find(&deletedMedia, deleted)
 		for _, dm := range deletedMedia {
 			utils.DeleteStaticFile(dm.Name)
 		}
-		db.Delete(&deletedMedia)
+		database.DB.Delete(&deletedMedia)
 	}
 
 	if len(files) >= 1 {
 		media := []*Media{}
-		err = utils.UploadMultipleFiles(files, &media)
+		err := utils.UploadMultipleFiles(files, &media)
 		if err != nil {
 			return nil, err
 		}
 
-		db.CreateInBatches(&media, len(media))
-		db.Model(&reply).Association("Media").Append(media)
+		database.DB.CreateInBatches(&media, len(media))
+		database.DB.Model(&reply).Association("Media").Append(media)
 	}
 
 	if content != "" {
 		reply.Content = content
 	}
 
-	db.Save(&reply)
+	database.DB.Save(&reply)
 
 	model := ReplyVM{
 		ReplyID:           reply.ID,
@@ -204,19 +168,7 @@ func (rm ReplyModel) UpdateReply(id uint, content string, deleted []string, file
 
 func (ReplyModel) DeleteReply(id uint) error {
 
-	db, err := db.ConnectToDb()
-	if err != nil {
-		return err
-	}
-
-	sqlDb, err := db.DB()
-	if err != nil {
-		return err
-	}
-
-	defer sqlDb.Close()
-
-	if err = db.Delete(&Reply{}, id).Error; err != nil {
+	if err := database.DB.Delete(&Reply{}, id).Error; err != nil {
 		return err
 	}
 
