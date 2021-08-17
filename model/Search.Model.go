@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"log"
 	"posthis/database"
 	"posthis/entity"
 	"posthis/viewmodel"
@@ -34,13 +33,12 @@ func (sm SearchModel) GetSearch(
 	if searchPost {
 
 		var (
-			ids   []int
-			posts []Post
+			ids   = make([]int, 0)
+			posts = make([]Post, 0)
 		)
 
 		rows, err := database.DB.Raw("CALL SP_SEARCH_POSTS(?,?,?,?)", query, viewerId, offsetPost, limitPost).Rows()
 		if err != nil {
-			log.Println("Error con datos", err.Error())
 			return nil, err
 		}
 
@@ -76,12 +74,12 @@ func (sm SearchModel) GetSearch(
 		//relate media to viemodel
 		database.DB.Preload("Media").Find(&posts, ids)
 
-		for i := range posts {
+		for i := range model.Posts {
 			for j := range posts[i].Media {
 				model.Posts[i].Media = append(model.Posts[i].Media,
 					viewmodel.MediaVM{
 						ID:      posts[i].Media[j].ID,
-						Path:    posts[i].Media[j].Name,
+						Path:    posts[i].Media[j].GetPath(sm.Scheme, sm.Host),
 						Mime:    posts[i].Media[j].Mime,
 						IsVideo: strings.Contains(posts[i].Media[j].Mime, "video")})
 			}
@@ -89,9 +87,9 @@ func (sm SearchModel) GetSearch(
 	}
 
 	if searchUser {
+
 		rows, err := database.DB.Raw("CALL SP_SEARCH_USERS(?,?,?)", query, offsetUser, limitUser).Rows()
 		if err != nil {
-			log.Println("Error con datos", err.Error())
 			return nil, err
 		}
 

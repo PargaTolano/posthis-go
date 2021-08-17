@@ -66,15 +66,16 @@ func (fm FollowModel) CreateFollow(id, followerId uint) (*UserVM, error) {
 	user := User{}
 	follower := User{}
 
-	database.DB.First(&user, id)
-	database.DB.First(&follower, followerId)
-
-	if database.DB.Error != nil {
-		return nil, database.DB.Error
+	if err := database.DB.First(&user, id).Error; err != nil {
+		return nil, err
 	}
 
-	follow := Follow{FollowerID: follower.ID, FollowedID: user.ID}
-	if err := database.DB.FirstOrCreate(&follow).Error; err != nil {
+	if err := database.DB.First(&follower, followerId).Error; err != nil {
+		return nil, err
+	}
+
+	follow := Follow{}
+	if err := database.DB.Where(map[string]interface{}{"follower_id": follower.ID, "followed_id": user.ID}).FirstOrCreate(&follow).Error; err != nil {
 		return nil, err
 	}
 	database.DB.Model(&user).Association("followers").Append(&follow)
