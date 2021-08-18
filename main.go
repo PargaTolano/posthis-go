@@ -91,7 +91,13 @@ func main() {
 
 	handler := cors.AllowAll().Handler(mux)
 
-	log.Println("Starting server on :4000")
+	port := os.Getenv("PORT")
 
-	log.Fatal(http.ListenAndServe(":4000", handler))
+	if port == "" {
+		port = "4000"
+	}
+
+	log.Println("Starting server on :" + port)
+
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
