@@ -1,0 +1,53 @@
+.root{
+    display:            flex;
+    width:              100%;
+    padding:            10px;
+    border-radius:      10px;
+    justify-content:    flex-start;
+    align-items:        flex-start;
+    gap:                10px;
+    background-color:   #2b387f;
+}
+
+.detail{
+    display:            flex;
+    margin-right:       auto;
+    flex-flow: column   nowrap;
+    justify-content:    flex-start;
+    align-items:        center;
+}
+
+.profileLink{
+    display: inline-block;
+    height: auto;
+    width:  auto;
+}
+
+.pfp{
+    width:              64px;
+    height:             64px;
+    border-radius:      50%;
+    background-color:   #444;
+}
+
+.userdata{
+    display:            inline-block;
+    margin:             0;
+    font-size:          18px;
+    color:              white;
+    text-decoration:    none;
+}
+
+.userdata:hover{
+    text-decoration:    underline;
+}
+
+.tag{
+    color: #CCC;
+}
+
+.followBtn{
+    margin-left:    auto!important;
+    align-self:     center;
+    color:          white;
+}

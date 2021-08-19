@@ -1,0 +1,16 @@
+.root{
+    padding:    0px!important;
+    height:     200px;
+    overflow-y: auto;
+}
+
+.paper{
+    display:            flex;
+    flex-direction:     column;
+    align-items:        center;
+    gap: 10px;
+}
+
+.loading{
+    justify-content:    center;
+}

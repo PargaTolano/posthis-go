@@ -1,3 +1,5 @@
-tmp/
-build/
-static/*
+backend/tmp/
+backend/build/
+backend/static/*
+
+frontend/node_modules

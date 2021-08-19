@@ -1,0 +1,41 @@
+.root{    
+    background-image:       url(../assets/app-background-min.png);
+    background-size:        cover;
+    background-position:    center;
+    background-attachment:  fixed;
+    background-repeat:      no-repeat;
+    min-height:             100vh;
+}
+
+.resultSection{
+    width:              100%;
+    max-width:          700px;
+    margin:             16px auto;
+    padding:            10px;
+    border-radius:      10px;
+    background-color:   #DDD;
+}
+
+.resultTitle{
+    color:          #ea5970;
+    margin-top:     1ex;
+    margin-bottom:  2ex;
+}
+
+.resultCards{
+    display:    flex;
+    flex-flow:  column nowrap;
+    gap:        10px;
+}
+
+.seeMore{
+    margin:     3ex 0 1ex 0;
+    color:      #2b387f;
+    cursor:     pointer;
+    transition: color 0.2s ease;
+}
+
+.seeMore:hover{
+    color: #ea5970;
+}
+
