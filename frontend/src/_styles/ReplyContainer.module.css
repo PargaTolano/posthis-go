@@ -1,7 +1,0 @@
-.replyContainer{
-    display:        flex;
-    width:          100%;
-    max-width:      700px;
-    flex-flow:      column nowrap;
-    align-items:    flex-end;
-}

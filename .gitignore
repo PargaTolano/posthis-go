@@ -1,6 +1,0 @@
-backend/tmp/
-backend/build/
-backend/static/*
-
-frontend/node_modules/
-frontend/build/node_modules/
