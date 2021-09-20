@@ -1,0 +1,29 @@
+.root{
+    display:            flex;
+    position:           fixed;
+    top:                0;
+    left:               0;
+    right:              20px;
+    bottom:             0;
+    flex-flow:          column nowrap;
+    transform:          translateX(-100%);
+    transition:         transform 0.3s transform;
+    background-color:   #313862;
+}
+
+.open{
+    transform: translateX(0%);
+}
+
+.section{
+    color: white;
+}
+
+.section + .section::before{
+    content: "";
+    display: block;
+    width: 100%;
+    margin: 1ex 1ch;
+    height: 2px;
+    background-color: white;
+}

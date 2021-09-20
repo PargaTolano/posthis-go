@@ -1,0 +1,8 @@
+.root{    
+    background-image:       url(../assets/app-background-min.png);
+    background-size:        cover;
+    background-position:    center;
+    background-attachment:  fixed;
+    background-repeat:      no-repeat;
+    min-height:             100vh;
+}

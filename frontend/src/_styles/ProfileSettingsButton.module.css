@@ -1,0 +1,16 @@
+.btn{
+    position:           absolute;
+    top:                0px;
+    left:               0px;
+    margin-top:         15px!important;
+    margin-left:        15px!important;
+    color:              white!important;
+    background-color:   #eb667d!important;
+    transition:         background-color 0.3s ease, color 0.3s ease;
+    z-index: 200;
+}
+
+.btn:hover{
+    color:              #eb667d!important;
+    background-color:   white!important;
+}

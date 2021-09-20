@@ -1,0 +1,90 @@
+.cardContainer{
+    
+    position:           absolute;
+    display:            flex;
+    top:                0;
+    left:               0;
+    width:              100%;
+    height:             100%;
+    justify-content:    center;
+    align-items:        flex-end;
+}
+
+.card{
+    position:           relative;
+    display:            inline-block;
+    width:              100%;
+    height:             50%;
+    max-width:          400px;
+    border-radius:      20px;
+    background-color:   rgba(0, 0, 0, 0.5);
+    overflow: visible;
+}
+
+.contImg{
+    display:        flex;
+    position:       absolute;
+    top:            0;
+    left:           50%;
+    flex-flow:      column nowrap;
+    text-align:     center;
+    transform:      translate( -50%, -50%);
+}
+
+.username{
+    color: white;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.tag{
+    color: #DDDDDD;
+    margin: 0;
+}
+
+.profilePicture{
+    width:              150px;
+    height:             150px;
+    margin:             0 auto;
+    border:             5px solid white;
+    border-radius:      50%;
+    background-color:   #444;
+    object-fit:         cover;
+}
+
+.follows{
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+.followLink{
+    color: white;
+    cursor: pointer;
+}
+
+.followLink:hover{
+    text-decoration: underline;
+}
+
+.followLink + .followLink::before{
+    content:    "|";
+    padding:    0 1rem;
+    font-size:  1.2rem;
+    color:      white;
+}
+
+.followBtnContainer{
+    display: flex;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    justify-content: center;
+}
+
+.followBtn{
+    max-width: 200px;
+    padding: 8px 120px;
+    border-radius: 40px!important;
+    transform: translateY(50%);
+}
