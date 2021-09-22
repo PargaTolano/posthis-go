@@ -9,7 +9,8 @@ import {
   NotFound, 
   PostDetail, 
   ProfileDetail, 
-  SearchResult 
+  SearchResult,
+  Test
 } from 'components';
 
 import { PrivateRoute, PublicRoute }              from 'components/Routing';
@@ -57,7 +58,6 @@ function App() {
       toastSubs.unsubscribe();
       authSubs.unsubscribe();
     };
-
   },[]);
   
   const temp = { history, user };
@@ -83,6 +83,7 @@ function App() {
           <PrivateRoute       path={routes.searchResult}  component={SearchResult}    {...temp}   />
           <PrivateRoute exact path={routes.profile}       component={ProfileDetail}   {...temp}   />
           <PublicRoute  exact path={routes.login}         component={Login}           {...temp}   />
+          <Route  exact path={'/test'}              component={Test}            {...temp}   />
           <Route        exact path={'*'}                  component={NotFound}        {...temp}   />
         </Switch>
       </Router>

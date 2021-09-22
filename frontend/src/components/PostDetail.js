@@ -1,11 +1,8 @@
 import React                        from 'react';
 import { Redirect }                 from 'react-router-dom';
 
-import { NavBar }                   from 'components/Feed';
-
-import {
-  PostCard
-} from 'components/Post';
+import { NavbarWrapper }  from './Common';
+import { PostCard }       from 'components/Post';
 
 import { 
   CreateReplyForm,
@@ -31,7 +28,7 @@ export const PostDetail = ( props ) => {
 
   return (
     <div className={styles.background}>
-      <NavBar history={history}/>
+      <NavbarWrapper history={history}/>
 
       {
         (ready && post)

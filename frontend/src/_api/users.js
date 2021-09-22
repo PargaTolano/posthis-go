@@ -1,5 +1,4 @@
 import {  getURL  }                 from '_config';
-import { arrayToCSV }               from '_utils';
 import { authHeader, requestWrapper }               from '_helpers';
 
 import { SignUpModel, LogInModel, SearchRequestModel, UpdateUserViewModel} from '_model';
@@ -43,7 +42,6 @@ const createUser = async ( model ) => {
 
     return requestWrapper( async ()=> fetch( await getURL( `api/users-create` ), options ) );
 };
-
 
 const validatePassword = async ( password ) => {
 

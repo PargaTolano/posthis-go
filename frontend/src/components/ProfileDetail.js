@@ -9,6 +9,7 @@ import { routes }               from '_utils';
 import { useGetUserProfile }    from '_hooks';
 
 import styles from '_styles/ProfileDetail.module.css';
+import { NavbarWrapper } from './Common';
 export const ProfileDetail = ({ match, history, ...rest }) => {
   
   const { id }  = match.params;
@@ -23,7 +24,7 @@ export const ProfileDetail = ({ match, history, ...rest }) => {
       <div className = { styles.root }>
 
         <DialogFollowWrapper history={history}/>
-        <NavBar history={history} {...rest}/>
+        <NavbarWrapper history={history} {...rest}/>
         {
           ready && <ProfileContainer user={user} setUser={setUser} {...rest}/>
         }

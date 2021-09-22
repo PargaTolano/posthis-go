@@ -4,7 +4,7 @@ import { NavBar, PostContainer }      from 'components/Feed';
 
 import { CreatePostForm }             from 'components/Post';
 
-import { PaginationElement }          from 'components/Common';
+import { NavbarWrapper, PaginationElement }          from 'components/Common';
 
 import { getFeed }                    from '_api';
 
@@ -75,7 +75,7 @@ export const Feed = (props) => {
 
   return (
     <div className={styles.root}>
-      <NavBar history={history}/>
+      <NavbarWrapper history={history}/>
       <CreatePostForm afterUpdate={loadFeed}/>
       {
         (posts?.length !== 0) && <PostContainer posts={posts} history={history}/>

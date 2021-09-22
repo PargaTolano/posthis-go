@@ -12,6 +12,7 @@ import { DialogFollowWrapper } from 'components/Follow';
 import { useMakeSearch } from '_hooks';
 
 import styles                  from '_styles/SearchResult.module.css';
+import { NavbarWrapper } from './Common';
 
 export const SearchResult = ( props ) => {
 
@@ -25,8 +26,7 @@ export const SearchResult = ( props ) => {
     <div className={styles.root}>
 
       <DialogFollowWrapper history={history}/>
-
-      <NavBar  auth={auth} history={history}/>
+      <NavbarWrapper auth={auth} history={history}/>
 
       <section className={styles.resultSection}>
         <h3 className={styles.resultTitle}>Users</h3>

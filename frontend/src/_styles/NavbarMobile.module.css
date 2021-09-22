@@ -3,12 +3,14 @@
     position:           fixed;
     top:                0;
     left:               0;
-    right:              20px;
+    right:              30%;
     bottom:             0;
+    padding:            15px;
     flex-flow:          column nowrap;
     transform:          translateX(-100%);
     transition:         transform 0.3s transform;
-    background-color:   #313862;
+    background-color:   #1b2452;
+    z-index:            1000;
 }
 
 .open{
@@ -19,11 +21,143 @@
     color: white;
 }
 
-.section + .section::before{
-    content: "";
-    display: block;
-    width: 100%;
-    margin: 1ex 1ch;
-    height: 2px;
-    background-color: white;
+.section:first-child{
+    display:            flex;
+    justify-content:    space-between;
+    align-items:        center;
+}
+
+.section:last-child{
+    margin-top: auto;
+}
+
+.section + .section:not(:last-child)::before{
+    content:            "";
+    display:            block;
+    width:              100%;
+    margin:             1ex 0ch;
+    height:             2px;
+    background-color:   white;
+}
+
+.logo{
+    display:        inline-block;
+    height:         50px;
+}
+
+.pfpFlex{
+    position:       relative;
+    display:        flex;
+    width:          100%;
+    height:         100%;
+    padding-bottom: 20px;
+    margin:         none;
+    align-items:    center;
+    gap:            10px;
+}
+
+.pfpContainer{
+    display:        inline-block;
+    width:          40px;
+    height:         40px;
+}
+
+.pfp{
+    display:            inline-block;
+    width:              40px;
+    height:             40px;
+    border-radius:      50%;
+    background-color:   #444;
+    cursor:             pointer;
+}
+
+.profileLink{
+    color:          white;
+    text-decoration: none;
+}
+
+.linkList{
+    display: flex;
+    gap:     10px;
+}
+
+.linkListElement + .linkListElement::before{
+    content:            "";
+    width:              100%;
+    height:             1px;
+    background-color:   white;
+}
+
+.searchBar{
+    display:        inline-block;
+    position:       relative;
+    width:          100%;
+    margin-left:    auto;
+    border-radius:  10px;
+    color:          white;
+}
+
+.searchIcon{
+    position:           absolute;
+    display:            flex;
+    right:              0;
+    height:             100%;
+    padding:            0 10px;
+    align-items:        center;
+    justify-content:    center;
+    color:              white;
+    cursor:             pointer;
+}
+
+.searchBarForm{
+    display:        inline-block;
+    width:          100%;
+    height:         100%;
+    padding:        10px 0px;
+}
+
+.searchBarRoot{
+    height:             100%;
+    padding:            auto 0px;
+    background-color:   #FFFFFF22;
+    border-radius:      10px;
+}
+
+.searchBarInput{
+    display:        inline-block;
+    width:          100%;
+    height:         100%;
+    padding:        10px 10px 10px 0;
+    padding-left:   calc(1em + 30px);
+    border:         none;
+    border-radius:  10px;
+    outline:        none;
+    font-size:      16px;
+    color:          white;
+    background-color: rgb(255 255 255 / 13%);
+    transition:     width 0.3s ease;
+    transition-timing-function: ease!important;
+}
+
+.logOutBtn{
+    display:            flex;
+    width:              100%;
+    border:             none;
+    outline:            none;
+    justify-content:    space-between;
+    align-items:        center;
+    color:              #F50057!important;
+    font-size:          18px;
+    font-weight:        bold;
+    background-color:   transparent;
+    filter:             brightness(1);
+    cursor:             pointer;
+} 
+
+.logOutBtn:hover{
+    filter:             brightness(1.5);
+}
+
+.logOutIcon{
+    color:  #F50057
 }
