@@ -1,87 +1,50 @@
-import {  getURL  }                 from '_config';
-import { authHeader, requestWrapper }               from '_helpers';
+import {  getURL  } from '_config';
+import { authHeader, requestWrapper } from '_helpers';
+import { axios } from '_config';
 
-import { SignUpModel, LogInModel, SearchRequestModel, UpdateUserViewModel} from '_model';
+import { 
+    SignUpModel, 
+    LogInModel, 
+    SearchRequestModel, 
+    UpdateUserViewModel
+} from '_model';
 
 const getUsers = async () => {
-
-    let headers= authHeader();
-
-    let options ={
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( 'api/users-get' ), options ) );
+    const headers= authHeader();
+    const options ={ headers };
+    return requestWrapper(()=>axios.get('users-get', options));
 }
 
 const getUser = async ( id ) => {
-
-    let headers= authHeader();
-
-    let options ={
-        headers
-    };
-    
-    return requestWrapper( async ()=> fetch( await getURL( `api/user/${id}` ), options ) );
+    const headers= authHeader();
+    const options ={ headers };
+    return requestWrapper(()=>axios.get(`user/${id}`, options));
 };
 
 /**
  * @param {SignUpModel} model
  */
 const createUser = async ( model ) => {
-
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-
-    const options = {
-        method: "POST",
-        body: JSON.stringify( model ),
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( `api/users-create` ), options ) );
+    return requestWrapper(()=>axios.post(`users-create`, model ));
 };
 
 const validatePassword = async ( password ) => {
-
     const headers = authHeader();
-
-    const options = {
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( `/api/validate-password/${password}`), options ) );
+    const options = { headers };
+    return requestWrapper(()=>axios.get(`validate-password/${password}`, options));
 };
 
 /**
  * @param {LogInModel} model
  */
 const logIn = async ( model ) => {
-
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-
-    const options = {
-        method: 'POST',
-        body: JSON.stringify( model ),
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( `api/login` ), options ) );
+    return requestWrapper(()=>axios.post(`login`, model));
 };
 
 const logOut = async ( model ) => {
-
     const headers = authHeader();
-
-    const options = {
-        method: 'POST',
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( `api/logout` ), options ) );
+    const options = { headers };
+    return requestWrapper(()=>axios.post(`logout`, model, options));
 };
 
 /**
@@ -89,23 +52,21 @@ const logOut = async ( model ) => {
  * @param {UpdateUserViewModel} model
  */
 const updateUser = async ( id, model ) =>{
+    const headers = {
+        ...authHeader(),
+        'Content-Type': 'multipart/form-data'
+    };
 
-    const headers = authHeader();
-
-    let body = new FormData();
+    const body = new FormData();
     body.append('username'    , model.username    );
     body.append('tag'         , model.tag         );
     body.append('email'       , model.email       );
     body.append('profilePic'  , model.profilePic  );
     body.append('coverPic'    , model.coverPic    );
 
-    const options = {
-        method: 'PUT',
-        body,
-        headers
-    };
+    const options = { headers };
 
-    return requestWrapper( async ()=> fetch( await getURL( `api/users-update/${id}` ), options ) );
+    return requestWrapper(()=>axios.put(`users-update/${id}`, body, options));
 };
 
 /**
@@ -113,13 +74,8 @@ const updateUser = async ( id, model ) =>{
  */
 const deleteUser = async ( id ) =>{
     const headers = authHeader();
-
-    const options = {
-        method: 'DELETE',
-        headers
-    };
-    
-    return requestWrapper( async ()=> fetch( await getURL( `api/users-delete/${id}` ), options ) );
+    const options = { headers };
+    return requestWrapper(()=>axios.delete(`users-delete/${id}`, options));
 };
 
 export{

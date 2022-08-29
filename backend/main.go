@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+
 	"posthis/auth"
 	"posthis/controller"
 	"posthis/database"
@@ -11,6 +12,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
+
+	"posthis/utils"
 )
 
 func initRoutes() http.Handler {
@@ -87,15 +90,14 @@ func main() {
 	//Init gorm
 	database.InitDB()
 
+	//Init firebase app
+	utils.Init()
+
 	mux := initRoutes()
 
 	handler := cors.AllowAll().Handler(mux)
 
 	port := os.Getenv("PORT")
-
-	if port == "" {
-		port = "4000"
-	}
 
 	log.Println("Starting server on :" + port)
 

@@ -24,7 +24,6 @@ func (PostModel) GetPosts() ([]Post, error) {
 }
 
 func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
-
 	post := Post{}
 	model := PostDetailVM{}
 
@@ -46,6 +45,7 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 		&model.RepostCount,
 		&model.IsLiked,
 		&model.IsReposted)
+
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +54,12 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 
 	database.DB.Preload("Media").First(&post, id)
 
-	for i := range post.Media {
-
+	for _, media := range post.Media {
 		mvm := MediaVM{
-			ID:      post.Media[i].ID,
-			Path:    post.Media[i].GetPath(pm.Scheme, pm.Host),
-			Mime:    post.Media[i].Mime,
-			IsVideo: strings.Contains("video", post.Media[i].Mime)}
+			ID:      media.ID,
+			Path:    media.GetPath(pm.Scheme, pm.Host),
+			Mime:    media.Mime,
+			IsVideo: strings.Contains("video", media.Mime)}
 		model.Media = append(model.Media, mvm)
 	}
 
@@ -199,12 +198,12 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 	}).Find(&posts, postIds)
 
 	for i := range posts {
-		for j := range posts[i].Media {
+		for _, postmedia := range posts[i].Media {
 			mvm := MediaVM{
-				ID:      posts[i].Media[j].ID,
-				Path:    posts[i].Media[j].GetPath(pm.Scheme, pm.Host),
-				Mime:    posts[i].Media[j].Mime,
-				IsVideo: strings.Contains(posts[i].Media[j].Mime, "video"),
+				ID:      postmedia.ID,
+				Path:    postmedia.Url,
+				Mime:    postmedia.Mime,
+				IsVideo: strings.Contains(postmedia.Mime, "video"),
 			}
 
 			models[i].Media = append(models[i].Media, mvm)

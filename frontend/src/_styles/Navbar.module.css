@@ -1,4 +1,5 @@
 .navbar{
+    display:            block;
     position:           sticky;
     top:                0;
     height:             80px;
@@ -81,7 +82,6 @@
 .pfpFlex{
     position:       relative;
     display:        flex;
-    width:          60px;
     height:         100%;
     align-items:    center;
     margin-left:    20px;

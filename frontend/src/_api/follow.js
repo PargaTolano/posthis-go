@@ -1,4 +1,4 @@
-import {  getURL  }         from '_config';
+import {  axios, getURL  }         from '_config';
 import { authHeader, requestWrapper }       from '_helpers'
 import { FollowViewModel }  from '_model';
 
@@ -6,58 +6,40 @@ import { FollowViewModel }  from '_model';
  * @param   {Number | string} id
  */
 const getFollowers= async ( id ) => {
-
     const headers = authHeader();
+    const options = { headers };
 
-    const options = {
-        headers
-    };
-
-    return requestWrapper( async () => fetch( await getURL( `api/follows/${id}` ), options ));
+    return requestWrapper(()=>axios.get(`follows/${id}`, options));
 }
 
 /**
  * @param   {Number | string} id
  */
 const getFollowing = async ( id ) => {
-
     const headers = authHeader();
-
-    const options = {
-        headers
-    };
+    const options = { headers };
     
-    return requestWrapper( async () => fetch( await getURL( `api/follows-following/${id}` ), options ));
+    return requestWrapper(()=>axios.get(`follows-following/${id}`, options));
 };
 
 /**
  * @param {Number | string} followedId
  */
 const createFollow = async ( followedId ) => {
-
     const headers = authHeader();
-
-    const options = {
-        method: 'POST',
-        headers
-    };
+    const options = { headers };
     
-    return requestWrapper( async () => fetch( await getURL( `api/follows-create/${followedId}` ), options ));
+    return requestWrapper(()=>axios.post(`follows-create/${followedId}`, options));
 };
 
 /**
  * @param {Number | string} id
  */
 const deleteFollow = async ( id ) =>{
-
     const headers = authHeader();
-
-    const options = {
-        method: 'DELETE',
-        headers
-    };
+    const options = { headers };
     
-    return requestWrapper( async () => fetch( await getURL( `api/follows-delete/${id}` ), options ));
+    return requestWrapper(()=>axios.delete(`follows-delete/${id}`, options));
 };
 
 //API ENTRYPOINT CORRECTION DONE

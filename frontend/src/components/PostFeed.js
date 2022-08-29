@@ -53,7 +53,6 @@ export const Feed = (props) => {
 
   useEffect(() => {
     (async()=>{
-
       if (!paginationActive || last < limit) return;
 
       const {data:responseData, err} = await getFeed(total, limit);

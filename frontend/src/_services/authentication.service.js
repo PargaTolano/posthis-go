@@ -19,13 +19,12 @@ function login( username, password ) {
 
     return logIn(data)
         .then(({data, err}) => {
-
             if( err ){
                 toastService.makeToast( err.message, 'error');
                 return null;
             }
 
-            let {data:userData} = data;
+            const {data:userData} = data;
             localStorage.setItem( authTokenKey, JSON.stringify( userData ) );
             currentUserSubject.next( userData );
             

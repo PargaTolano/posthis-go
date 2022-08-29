@@ -1,4 +1,4 @@
-import { handleResponse} from '_helpers';
+import axios, { AxiosResponse } from 'axios';
 
 export class ResponseData{
 
@@ -13,15 +13,14 @@ export class ResponseData{
 
 /**
  * 
- * @param {Promise<Any>} req request to listen from
+ * @param {Promise<AxiosResponse>} req request to listen from
  * @returns {Promise<ResponseData>} handled data for use in the front end
  */
 export async function requestWrapper(req){
     try{
-        let res = await req();
-        let handled = await handleResponse(res);
-        return new ResponseData( handled, null);
-    }catch(e){
+        const res=await req();
+        return new ResponseData( res.data, null);
+    } catch(e){
         return new ResponseData( null, e);
     }
 }

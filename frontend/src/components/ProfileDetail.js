@@ -1,18 +1,18 @@
-import React                    from 'react';
-import { Redirect }             from 'react-router-dom';
+import React from 'react';
+import { Redirect } from 'react-router-dom';
 
-import { NavBar }               from 'components/Feed';
-import { ProfileContainer }     from 'components/Profile';
+import { NavbarWrapper } from './Common';
+import { ProfileContainer } from 'components/Profile';
 import { DialogFollowWrapper } from 'components/Follow';
 
-import { routes }               from '_utils';
-import { useGetUserProfile }    from '_hooks';
+import { routes } from '_utils';
+import { useGetUserProfile } from '_hooks';
 
 import styles from '_styles/ProfileDetail.module.css';
-import { NavbarWrapper } from './Common';
 export const ProfileDetail = ({ match, history, ...rest }) => {
   
   const { id }  = match.params;
+  console.log(`THIS IS THE PROFILE: ${id}`);
 
   const [[ready, user], setUser] = useGetUserProfile( id || '' );
 
@@ -22,12 +22,9 @@ export const ProfileDetail = ({ match, history, ...rest }) => {
 
   return (
       <div className = { styles.root }>
-
         <DialogFollowWrapper history={history}/>
         <NavbarWrapper history={history} {...rest}/>
-        {
-          ready && <ProfileContainer user={user} setUser={setUser} {...rest}/>
-        }
+        { ready && <ProfileContainer user={user} setUser={setUser} {...rest}/> }
       </div>
   );
 };

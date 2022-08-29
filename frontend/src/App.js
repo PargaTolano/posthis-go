@@ -1,5 +1,9 @@
-import React, { useState, useEffect }                         from 'react';
-import { BrowserRouter as Router, Route, Switch }  from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { 
+  BrowserRouter as Router, 
+  Route, 
+  Switch }  
+from 'react-router-dom';
 
 import { toast, ToastContainer } from 'react-toastify';
 
@@ -18,7 +22,7 @@ import { Loading }                                from 'components/Common';
 
 import { routes }                                 from '_utils';
 import { history }                                from '_helpers';
-import { authenticationService, toastService }                  from '_services';
+import { authenticationService, toastService }    from '_services';
 
 import 'react-toastify/dist/ReactToastify.min.css';
 import 'react-toastify/dist/ReactToastify.minimal.css';
@@ -26,12 +30,10 @@ import 'react-toastify/dist/ReactToastify.minimal.css';
 import '_styles/ToastStyles.css';
 
 function App() {
-
-  const [ user, setUser ] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(()=>{
-
-    let toastSubs = 
+    const toastSubs = 
         toastService
             .toast$
             .subscribe(({content, type}) => 
@@ -47,13 +49,12 @@ function App() {
                 })
               }
             );
-
-    let authSubs = 
+    
+    const authSubs = 
           authenticationService
               .currentUser
               .subscribe(x=> void setUser(x));
-
-
+    
     return ()=>{
       toastSubs.unsubscribe();
       authSubs.unsubscribe();
@@ -83,7 +84,7 @@ function App() {
           <PrivateRoute       path={routes.searchResult}  component={SearchResult}    {...temp}   />
           <PrivateRoute exact path={routes.profile}       component={ProfileDetail}   {...temp}   />
           <PublicRoute  exact path={routes.login}         component={Login}           {...temp}   />
-          <Route  exact path={'/test'}              component={Test}            {...temp}   />
+          <Route        exact path={'/test'}              component={Test}            {...temp}   />
           <Route        exact path={'*'}                  component={NotFound}        {...temp}   />
         </Switch>
       </Router>

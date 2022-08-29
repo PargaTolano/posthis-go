@@ -1,4 +1,4 @@
-import {  getURL  }     from '_config';
+import { axios }     from '_config';
 import { authHeader, requestWrapper }   from '_helpers';
 
 import { CReplyModel, UReplyModel } from '_model';
@@ -7,37 +7,27 @@ import { CReplyModel, UReplyModel } from '_model';
  * @param   {Number} id
  */
 const getReplies = async ( id ) => {
-
     const headers = authHeader();
-
-    const options = {
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( `api/replies/${id}` ), options ) );
+    const options = { headers };
+    return requestWrapper(()=>axios.get(`replies/${id}`, options));
 };
 
 /**
  * @param {CReplyModel} model
  */
 const createReply = async ( model ) => {
-
-    const headers = authHeader();
-
-    let fd = new FormData();
-    fd.append('content', model.content  );
-
-    for( let f of model.files ){
-        fd.append('files', f );
-    }
-
-    const options = {
-        method: 'POST',
-        body: fd,
-        headers
+    const headers = {
+        ...authHeader(),
+        'Content-Type': 'multipart/form-data'
     };
 
-    return requestWrapper( async ()=> fetch( await getURL( `api/replies-create/${model.userID}/${model.postID}` ), options ) );
+    const fd = new FormData();
+    fd.append('content', model.content);
+    model.files.forEach(x=>fd.append('files',x));
+
+    const options = { headers };
+
+    return requestWrapper(()=>axios.post(`replies-create/${model.userID}/${model.postID}`, fd, options));
 };
 
 /**
@@ -45,42 +35,29 @@ const createReply = async ( model ) => {
  * @param {UReplyModel} model
  */
  const updateReply = async ( id, model ) => {
-
-    const headers = authHeader();
-
-    let fd = new FormData();
-    fd.append('content', model.content  );
-
-    for( let did of model.deleted ){
-        fd.append('deleted', did );
-    }
-
-    for( let f of model.files ){
-        fd.append('files', f );
-    }
-
-    const options = {
-        method: 'PUT',
-        body: fd,
-        headers
+    const headers = {
+        ...authHeader(),
+        'Content-Type': 'multipart/form-data'
     };
 
-    return requestWrapper( async ()=> fetch( await getURL( `api/replies-update/${id}` ), options ) );
+    const fd = new FormData();
+    fd.append('content', model.content);
+    model.deleted.forEach(x=>fd.append('deleted', x));
+    model.files.forEach(x=>fd.append('files', x));
+
+    const options = { headers };
+
+    return requestWrapper(()=>axios.put(`replies-update/${id}`, options));
 };
 
 /**
  * @param {Number} id
  */
  const deleteReply = async ( id ) => {
-
     const headers = authHeader();
+    const options = { headers };
 
-    const options = {
-        method: 'DELETE',
-        headers
-    };
-
-    return requestWrapper( async ()=> fetch( await getURL( `api/replies-delete/${id}` ), options ) );
+    return requestWrapper(()=>axios.delete(`replies-delete/${id}`, options));
 };
 
 export{

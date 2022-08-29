@@ -25,7 +25,6 @@ export const PaginationElement = ({
             ref={ref}
             className={styles.loading}
         >
-
             {
                 more ?
                     <CircularProgress color='primary'/>

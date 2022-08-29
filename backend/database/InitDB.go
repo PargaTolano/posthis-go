@@ -21,8 +21,7 @@ type Follow = entity.Follow
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := "root:0000@tcp(127.0.0.1:3306)/posthis_local?charset=utf8mb4&parseTime=True&loc=Local"
-
+	dsn := os.Getenv("DB_DSN")
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction: true,
 		NowFunc:                time.Now,

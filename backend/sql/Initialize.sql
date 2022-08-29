@@ -1,5 +1,4 @@
 SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
-SET sql_mode = 'ONLY_FULL_GROUP_BY';
 
 DROP DATABASE IF EXISTS posthis_local;
 CREATE DATABASE posthis_local;
@@ -222,16 +221,16 @@ BEGIN
     ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
     LIMIT in_offset, in_limit;
     
-    SELECT 
-		ID, 
-		PublisherID, 
-		PublisherUserName, 
-		PublisherTag, 
-		PublisherProfilePic, 
-		ReposterUsername, 
-		ReposterTag, 
-		Date, 
-		Content, 
+    SELECT
+		ID,
+		PublisherID,
+		PublisherUserName,
+		PublisherTag,
+		PublisherProfilePic,
+		ReposterUsername,
+		ReposterTag,
+		Date,
+		Content,
 		RepostID,
         LikeCount,
         ReplyCount,

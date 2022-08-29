@@ -1,5 +1,6 @@
 backend/.vscode
 backend/tmp/
 backend/build/
+backend/vendor/
 
 frontend/node_modules/

@@ -10,7 +10,7 @@ export const usePagination = ( hasFetched, total, last, limit, onIntersection, r
         if ( last < limit ){
             setMore(!hasFetched);
         }
-    }, [ hasFetched, total, last, limit ]);
+    }, [hasFetched, total, last, limit]);
 
     useEffect( () => {
         let observer = new IntersectionObserver(
@@ -24,13 +24,11 @@ export const usePagination = ( hasFetched, total, last, limit, onIntersection, r
                 root: null,
                 rootMargin,
             });
-
         observer.observe(ref.current);
-
 
         return () => void observer.disconnect();
     },[]);
-
+    
     return {ref, more};
 };
 

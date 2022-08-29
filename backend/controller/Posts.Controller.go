@@ -59,7 +59,6 @@ func GetPost() http.Handler {
 //The key files holds the media to upload to the database and associate to this post
 func CreatePost() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		postModel := PostModel{}
 
 		r.ParseMultipartForm(10 << 20)

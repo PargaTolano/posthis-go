@@ -1,10 +1,13 @@
 import {  getURL  }     from '_config';
 
+
+/// UNUSED
+
 /**
  * @param   {Number} id
  */
 const getHashtags= async ( ) => {
-    let res = await fetch( await getURL( `api/hashtags/Get` ) );
+    let res = await fetch(getURL( `api/hashtags/Get`));
     return res.json();
 };
 

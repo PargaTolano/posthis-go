@@ -10,6 +10,7 @@ type Media struct {
 	UpdatedAt time.Time
 	Mime      string
 	Name      string
+	Url       string
 	OwnerID   int
 	OwnerType string
 }
