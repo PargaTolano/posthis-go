@@ -12,7 +12,7 @@ import {
 } from '@material-ui/core';
 
 import {
-  Favorite as FavoriteIcon,
+  Favorite       as FavoriteIcon,
   QuestionAnswer as QuestionAnswerIcon,
   ReplyAll       as ReplyAllIcon,
   Save           as SaveIcon,
@@ -22,13 +22,13 @@ import {
   Cancel         as CancelIcon,
 } from '@material-ui/icons';
 
-import { MediaGrid }                from 'components/Media';
+import { MediaGrid } from 'components/Media';
 
-import { authenticationService, replyService }    from '_services';
-import { handleResponse, history, prettyDate }  from '_helpers';
-import { fileToBase64, routes }     from '_utils';
+import { authenticationService, replyService, toastService } from '_services';
+import { prettyDate } from '_helpers';
+import { fileToBase64, routes } from '_utils';
 import { updateReply, deleteReply } from '_api';
-import { UReplyModel }              from '_model';
+import { UReplyModel } from '_model';
 
 import Placeholder from 'assets/avatar-placeholder.svg'
 
@@ -43,8 +43,8 @@ export const ReplyCard = ( props ) => {
     editMode:         false,
     content:          reply.content,
     originalContent:  reply.content,
-    medias:           reply.medias,
-    originalmedias:   reply.medias,
+    medias:           reply.medias ?? [],
+    originalmedias:   reply.medias ?? [],
     deleted:          [],
     newmedias:        []
   });
@@ -56,11 +56,12 @@ export const ReplyCard = ( props ) => {
     let model = new UReplyModel({
       content: state.content.trim(),
       deleted: state.deleted,
-      files:   state.newmedias });
+      files:   state.newmedias 
+    });
 
     const {data:responseData, err} = await updateReply( reply.replyID, model);
 
-    if (err !== null) return;
+    if (err !== null) return toastService.makeToast(err, 'error');
     
     const { data } = responseData;
 
@@ -77,11 +78,7 @@ export const ReplyCard = ( props ) => {
   };
 
   const onChangeContent = e=>{
-    setState( x =>{
-      let copy = {...x};
-      copy.content = e.target.value;
-      return copy;
-    });
+    setState(x=>({...x, content: e.target.value}));
   };
 
   const onChangeImages = async e=>{
@@ -97,14 +94,14 @@ export const ReplyCard = ( props ) => {
       let preview = await fileToBase64( file );
       
       const mediasViewModel = {
-        mediasID:  null,
-        mime:     file.type,
-        path:     preview,
-        isVideo:  file.type.includes('video')
+        mediasID:   null,
+        mime:       file.type,
+        path:       preview,
+        isVideo:    file.type.includes('video')
       };
 
-      mediasInfo     .push( mediasViewModel );
-      newmediasFiles .push( file );
+      mediasInfo.push(mediasViewModel);
+      newmediasFiles.push(file);
     }
 
     setState( x=>{
@@ -137,8 +134,9 @@ export const ReplyCard = ( props ) => {
 
   const onClickDelete = async ()=>{
     if(window.confirm('Seguro que quiere borrar la respuesta')){
-      const { err } = deleteReply(reply.replyID);
-      replyService.getPostReplies(id);
+      const { err } = await deleteReply(reply.replyID);
+      if(err)
+        replyService.getPostReplies(id);
     }
   };
 
@@ -151,7 +149,6 @@ export const ReplyCard = ( props ) => {
       </div>
       <div className={styles.container}>
         <CardContent>
-
           <div className={styles.displayTitle}>
             <Link to={routes.getProfile(reply.publisherID)} className={styles.avatarContainer}>
               <img src={reply.publisherProfilePic || Placeholder} className={styles.avatar}/>
@@ -176,15 +173,11 @@ export const ReplyCard = ( props ) => {
                   </IconButton>
                   { 
                     state.editMode 
-                    
                     ?
-
                     <IconButton onClick={onClickSave}>
                         <SaveIcon className={styles.saveIcon}/>
                     </IconButton>
-                    
                     :
-                    
                     <IconButton 
                       variant='contained' 
                       color='secondary' 
@@ -198,14 +191,12 @@ export const ReplyCard = ( props ) => {
               }
             </div>
           </div>
-
           {
             state.editMode ? 
             (<textarea className={styles.contentEdit} value={state.content} onChange={onChangeContent}></textarea>)
             :
             (<Typography variant='body2' component='p' className={state.medias?.length !== 0 ? styles.content : styles.contentNomedia} >{state.originalContent}</Typography>)
           }
-          
           {
             state.editMode &&
             <>
@@ -215,11 +206,9 @@ export const ReplyCard = ( props ) => {
               </IconButton>
             </>
           }
-
           <div className={styles.contMedia}>
             <MediaGrid media={ state.medias } {...temp}/>
           </div>
-
         </CardContent>
       </div>
     </div>

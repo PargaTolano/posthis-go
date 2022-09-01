@@ -16,8 +16,7 @@ const getLikes= async ( id ) => requestWrapper(()=>axios.get(`likes/${id}`));
 const createLike = async ( userId, postId ) => {
     const headers = authHeader();
     const options = { headers };
-
-    return requestWrapper(()=>axios.post(`likes-create/${userId}/${postId}`, options));
+    return requestWrapper(()=>axios.post(`likes-create/${userId}/${postId}`, {}, options));
 };
 
 /**

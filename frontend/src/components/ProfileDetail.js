@@ -12,7 +12,6 @@ import styles from '_styles/ProfileDetail.module.css';
 export const ProfileDetail = ({ match, history, ...rest }) => {
   
   const { id }  = match.params;
-  console.log(`THIS IS THE PROFILE: ${id}`);
 
   const [[ready, user], setUser] = useGetUserProfile( id || '' );
 

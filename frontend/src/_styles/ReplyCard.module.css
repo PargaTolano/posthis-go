@@ -5,6 +5,7 @@
 }
 
 .container{
+  color:                  white;
   position:               relative;
   width:                  100%;
   max-width:              600px;
@@ -25,16 +26,14 @@
 }
 
 .content {
-  color:          white;
   margin-left:    35px;
   margin-bottom:  5px;
 }
 
 .contentNoMedia{
-  color:        white;
   margin-left:   35px;
   margin-bottom: 5px;
-  font-size:     1.3rem;
+  font-size:     2rem;
   text-indent:   0;
   white-space:   pre-wrap
 }

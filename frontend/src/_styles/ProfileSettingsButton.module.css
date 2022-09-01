@@ -7,7 +7,7 @@
     color:              white!important;
     background-color:   #eb667d!important;
     transition:         background-color 0.3s ease, color 0.3s ease;
-    z-index: 200;
+    z-index: 1;
 }
 
 .btn:hover{

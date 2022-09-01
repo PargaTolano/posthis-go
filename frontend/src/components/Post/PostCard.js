@@ -21,7 +21,7 @@ import {
 
 import { MediaGrid }                from 'components/Media';
 
-import { handleResponse, prettyDate }           from '_helpers';
+import { prettyDate }               from '_helpers';
 import { authenticationService }    from '_services';
 import { routes, fileToBase64 }     from '_utils';
 
@@ -40,10 +40,7 @@ import Placeholder from 'assets/avatar-placeholder.svg'
 
 import styles from '_styles/PostCard.module.css';
 
-export const PostCard = ( props ) => {
-
-  const { post:postProp, history } = props;
-
+export const PostCard = ( {post:postProp, history} ) => {
   const [ post, setPost ] = useState( postProp );
 
   const [ state, setState ] = useState({

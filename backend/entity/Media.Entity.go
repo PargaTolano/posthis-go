@@ -5,42 +5,14 @@ import (
 )
 
 type Media struct {
-	ID        uint `gorm:"primarykey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Mime      string
-	Name      string
-	Url       string
-	OwnerID   int
-	OwnerType string
-}
-
-func (media *Media) GetPath(scheme, host string) string {
-
-	if len(scheme) == 0 {
-		scheme = "http"
-	}
-
-	if len(host) == 0 {
-		host = "localhost:4000"
-	}
-
-	return scheme + "://" + host + "/static/" + media.Name
-}
-
-func GetPath(scheme, host, name string) string {
-
-	if len(name) == 0 {
-		return ""
-	}
-
-	if len(scheme) == 0 {
-		scheme = "http"
-	}
-
-	if len(host) == 0 {
-		host = "localhost:4000"
-	}
-
-	return scheme + "://" + host + "/static/" + name
+	ID                uint `gorm:"primarykey"`
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Mime              string
+	Name              string
+	Url               string
+	ProfilePicOwnerID *uint `gorm:"uniqueIndex:idx_string_owner_id_other_owner_id"`
+	CoverPicOwnerID   *uint `gorm:"uniqueIndex:idx_string_owner_id_other_owner_id"`
+	PostOwnerID       *uint `gorm:"uniqueIndex:idx_string_owner_id_other_owner_id"`
+	ReplyOwnerID      *uint `gorm:"uniqueIndex:idx_string_owner_id_other_owner_id"`
 }

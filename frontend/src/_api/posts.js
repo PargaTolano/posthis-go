@@ -37,6 +37,7 @@ const createPost = async ( model ) => {
  * @param {Object} model
  */
 const updatePost = async ( id, model ) =>{
+    
     const headers = {
         ...authHeader(),
         'Content-Type': 'multipart/form-data'
@@ -46,6 +47,8 @@ const updatePost = async ( id, model ) =>{
     fd.append('content', model.content);
     model.deleted.forEach(x=>fd.append('deleted',x));
     model.files.forEach(x=>fd.append('files', x));
+    
+    fd.forEach(x=>console.log(x));
 
     const options = { headers };
 

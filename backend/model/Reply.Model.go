@@ -3,8 +3,7 @@ package model
 import (
 	"mime/multipart"
 	"posthis/database"
-	"posthis/entity"
-	"posthis/utils"
+	"posthis/storage"
 	"strings"
 
 	"gorm.io/gorm/clause"
@@ -37,8 +36,6 @@ func (rm ReplyModel) GetReplies(id uint) ([]ReplyVM, error) {
 			&model.PublisherProfilePic,
 			&model.Date)
 
-		model.PublisherProfilePic = entity.GetPath(rm.Scheme, rm.Host, model.PublisherProfilePic)
-
 		models = append(models, model)
 	}
 	if !rows.NextResultSet() {
@@ -57,12 +54,12 @@ func (rm ReplyModel) GetReplies(id uint) ([]ReplyVM, error) {
 	}).Find(&replies, replyIds)
 
 	for i := range replies {
-		for j := range replies[i].Media {
+		for _, replymedia := range replies[i].Media {
 			mvm := MediaVM{
-				ID:      replies[i].Media[j].ID,
-				Path:    replies[i].Media[j].GetPath(rm.Scheme, rm.Host),
-				Mime:    replies[i].Media[j].Mime,
-				IsVideo: strings.Contains(replies[i].Media[j].Mime, "video"),
+				ID:      replymedia.ID,
+				Path:    replymedia.Url,
+				Mime:    replymedia.Mime,
+				IsVideo: strings.Contains(replymedia.Mime, "video"),
 			}
 
 			models[i].Medias = append(models[i].Medias, mvm)
@@ -86,11 +83,18 @@ func (ReplyModel) CreateReply(userId, postId uint, content string, files []*mult
 		return nil, err
 	}
 
-	err := utils.UploadMultipleFiles(files, &media)
-	if err != nil {
-		return nil, err
+	if len(files) > 0 {
+		mediaData, err := storage.UploadMultipleFiles(files)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, data := range mediaData {
+			media = append(media, &Media{Name: data.Name, Mime: data.Mime, Url: data.Url})
+		}
+
+		database.DB.CreateInBatches(&media, len(media))
 	}
-	database.DB.CreateInBatches(&media, len(media))
 
 	reply := Reply{Content: content, Media: media, UserID: userId, PostID: postId}
 
@@ -105,7 +109,6 @@ func (rm ReplyModel) UpdateReply(id uint, content string, deleted []string, file
 
 	user := User{}
 	reply := Reply{}
-	deletedMedia := []*Media{}
 
 	if err := database.DB.First(&reply, id).Error; err != nil {
 		return nil, err
@@ -116,18 +119,18 @@ func (rm ReplyModel) UpdateReply(id uint, content string, deleted []string, file
 	}
 
 	if len(deleted) > 0 {
-		database.DB.Find(&deletedMedia, deleted)
-		for _, dm := range deletedMedia {
-			utils.DeleteStaticFile(dm.Name)
-		}
-		database.DB.Delete(&deletedMedia)
+		database.DB.Delete(&Media{}, deleted)
 	}
 
-	if len(files) >= 1 {
+	if len(files) > 0 {
 		media := []*Media{}
-		err := utils.UploadMultipleFiles(files, &media)
+		mediaData, err := storage.UploadMultipleFiles(files)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, data := range mediaData {
+			media = append(media, &Media{Name: data.Name, Mime: data.Mime, Url: data.Url})
 		}
 
 		database.DB.CreateInBatches(&media, len(media))
@@ -149,16 +152,15 @@ func (rm ReplyModel) UpdateReply(id uint, content string, deleted []string, file
 		Date:              reply.CreatedAt}
 
 	if user.ProfilePic != nil {
-		model.PublisherProfilePic = user.ProfilePic.GetPath(rm.Scheme, rm.Host)
+		model.PublisherProfilePic = user.ProfilePic.Url
 	}
 
-	for i := range reply.Media {
-
+	for _, media := range reply.Media {
 		mvm := MediaVM{
-			ID:      reply.Media[i].ID,
-			Path:    reply.Media[i].GetPath(rm.Scheme, rm.Host),
-			Mime:    reply.Media[i].Mime,
-			IsVideo: strings.Contains(reply.Media[i].Mime, "video")}
+			ID:      media.ID,
+			Path:    media.Url,
+			Mime:    media.Mime,
+			IsVideo: strings.Contains(media.Mime, "video")}
 
 		model.Medias = append(model.Medias, mvm)
 	}

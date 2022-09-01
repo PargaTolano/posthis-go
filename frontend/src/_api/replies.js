@@ -47,7 +47,7 @@ const createReply = async ( model ) => {
 
     const options = { headers };
 
-    return requestWrapper(()=>axios.put(`replies-update/${id}`, options));
+    return requestWrapper(()=>axios.put(`replies-update/${id}`, fd, options));
 };
 
 /**

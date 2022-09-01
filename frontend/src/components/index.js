@@ -5,3 +5,4 @@ export * from './PostDetail';
 export * from './ProfileDetail';
 export * from './SearchResult';
 export * from './Test';
+export * from './Practice';

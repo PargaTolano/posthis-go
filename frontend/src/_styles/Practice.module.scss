@@ -1,0 +1,20 @@
+.container{
+    overflow: auto;
+    width: 100vw;
+    height: 100vh;
+    background-color: #F5FFEE;
+    transition: background-color 0.3s, color 0.3s;
+    &.dark{
+        background-color: #333333;
+    }
+}
+
+.card{
+    color: black;
+    background-color: white;
+    transition: background-color 0.3s, color 0.3s;
+    .dark & {
+        color: white;
+        background-color: #454545;
+    }
+}

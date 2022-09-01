@@ -3,8 +3,7 @@ package model
 import (
 	"mime/multipart"
 	"posthis/database"
-	"posthis/entity"
-	"posthis/utils"
+	"posthis/storage"
 	"strings"
 
 	"gorm.io/gorm/clause"
@@ -50,14 +49,12 @@ func (pm PostModel) GetPost(userId, id uint) (*PostDetailVM, error) {
 		return nil, err
 	}
 
-	model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
-
 	database.DB.Preload("Media").First(&post, id)
 
 	for _, media := range post.Media {
 		mvm := MediaVM{
 			ID:      media.ID,
-			Path:    media.GetPath(pm.Scheme, pm.Host),
+			Path:    media.Url,
 			Mime:    media.Mime,
 			IsVideo: strings.Contains("video", media.Mime)}
 		model.Media = append(model.Media, mvm)
@@ -74,19 +71,37 @@ func (PostModel) CreatePost(ownerId uint, content string, files []*multipart.Fil
 		media  []*Media
 	)
 
-	database.DB.First(&poster, ownerId)
-
-	err := utils.UploadMultipleFiles(files, &media)
+	mediaData, err := storage.UploadMultipleFiles(files)
 	if err != nil {
 		return nil, err
 	}
 
-	database.DB.CreateInBatches(&media, len(media))
+	// create database media from data
+	for _, data := range mediaData {
+		media = append(media, &Media{Name: data.Name, Mime: data.Mime, Url: data.Url})
+	}
+
+	if err := database.DB.CreateInBatches(&media, len(media)).Error; err != nil {
+		println("failed to create media", err.Error())
+		return nil, err
+	}
 
 	post = Post{Content: content, Media: media}
 
-	database.DB.Create(&post)
-	database.DB.Model(&poster).Association("Posts").Append(&post)
+	if err := database.DB.First(&poster, ownerId).Error; err != nil {
+		println("failed to find poster, poster ID: ", ownerId, err.Error())
+		return nil, err
+	}
+
+	if err := database.DB.Create(&post).Error; err != nil {
+		println("failed to create post", err.Error())
+		return nil, err
+	}
+
+	if err := database.DB.Model(&poster).Association("Posts").Append(&post); err != nil {
+		println("failed to associate post to poster", err.Error())
+		return nil, err
+	}
 
 	return &post, nil
 }
@@ -95,22 +110,23 @@ func (pm PostModel) UpdatePost(userId, id uint, content string, deleted []string
 
 	var (
 		post         Post
-		media        []*Media
 		deletedMedia []*Media
 	)
 
 	database.DB.First(&post, id)
 
 	database.DB.Find(&deletedMedia, deleted)
-	for _, dm := range deletedMedia {
-		utils.DeleteStaticFile(dm.Name)
-	}
 	database.DB.Delete(&deletedMedia)
 
-	if len(files) >= 1 {
-		err := utils.UploadMultipleFiles(files, &media)
+	if len(files) > 0 {
+		var media []*Media
+		mediaData, err := storage.UploadMultipleFiles(files)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, data := range mediaData {
+			media = append(media, &Media{Name: data.Name, Mime: data.Mime, Url: data.Url})
 		}
 
 		database.DB.CreateInBatches(&media, len(media))
@@ -131,9 +147,18 @@ func (pm PostModel) UpdatePost(userId, id uint, content string, deleted []string
 	return model, nil
 }
 
+// TODO MANUAL STORAGE DELETE ON ALL MEDIA DELETING FUNCTIONS
 func (PostModel) DeletePost(id uint) error {
+	var post Post
+	database.DB.Model(&Post{}).Preload("Media").First(&post, id)
 
-	database.DB.Delete(&Post{}, id)
+	for _, media := range post.Media {
+		if err := storage.DeleteFile(media.Name); err != nil {
+			return err
+		}
+	}
+
+	database.DB.Delete(&post)
 	if err := database.DB.Error; err != nil {
 		return err
 	}
@@ -172,8 +197,6 @@ func (pm PostModel) GetFeed(id, offset, limit uint) ([]PostFeedVM, error) {
 			&model.RepostCount,
 			&model.IsLiked,
 			&model.IsReposted)
-
-		model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
 
 		models = append(models, model)
 	}
@@ -244,9 +267,6 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 			&model.RepostCount,
 			&model.IsLiked,
 			&model.IsReposted)
-
-		model.PublisherProfilePic = entity.GetPath(pm.Scheme, pm.Host, model.PublisherProfilePic)
-
 		models = append(models, model)
 	}
 	if !rows.NextResultSet() {
@@ -265,12 +285,12 @@ func (pm PostModel) GetUserFeed(id, userId, offset, limit uint) ([]PostFeedVM, e
 	}).Find(&posts, postIds)
 
 	for i := range posts {
-		for j := range posts[i].Media {
+		for _, postmedia := range posts[i].Media {
 			mvm := MediaVM{
-				ID:      posts[i].Media[j].ID,
-				Path:    posts[i].Media[j].GetPath(pm.Scheme, pm.Host),
-				Mime:    posts[i].Media[j].Mime,
-				IsVideo: strings.Contains(posts[i].Media[j].Mime, "video"),
+				ID:      postmedia.ID,
+				Path:    postmedia.Url,
+				Mime:    postmedia.Mime,
+				IsVideo: strings.Contains(postmedia.Mime, "video"),
 			}
 
 			models[i].Media = append(models[i].Media, mvm)

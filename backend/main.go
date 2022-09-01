@@ -8,12 +8,11 @@ import (
 	"posthis/auth"
 	"posthis/controller"
 	"posthis/database"
+	"posthis/storage"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
-
-	"posthis/utils"
 )
 
 func initRoutes() http.Handler {
@@ -91,7 +90,7 @@ func main() {
 	database.InitDB()
 
 	//Init firebase app
-	utils.Init()
+	storage.Init()
 
 	mux := initRoutes()
 

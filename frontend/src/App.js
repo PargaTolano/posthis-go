@@ -14,7 +14,8 @@ import {
   PostDetail, 
   ProfileDetail, 
   SearchResult,
-  Test
+  Test,
+  Practice
 } from 'components';
 
 import { PrivateRoute, PublicRoute }              from 'components/Routing';
@@ -84,7 +85,7 @@ function App() {
           <PrivateRoute       path={routes.searchResult}  component={SearchResult}    {...temp}   />
           <PrivateRoute exact path={routes.profile}       component={ProfileDetail}   {...temp}   />
           <PublicRoute  exact path={routes.login}         component={Login}           {...temp}   />
-          <Route        exact path={'/test'}              component={Test}            {...temp}   />
+          <Route        exact path={'/test'}              component={Practice}        {...temp}   />
           <Route        exact path={'*'}                  component={NotFound}        {...temp}   />
         </Switch>
       </Router>

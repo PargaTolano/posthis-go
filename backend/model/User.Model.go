@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"posthis/auth"
 	"posthis/database"
-	"posthis/entity"
+	"posthis/storage"
 	"posthis/utils"
 )
 
@@ -43,9 +43,6 @@ func (um UserModel) GetUser(id, viewerId uint) (*UserVM, error) {
 		&model.FollowerCount,
 		&model.FollowingCount,
 		&model.IsFollowed)
-
-	model.ProfilePicPath = entity.GetPath(um.Scheme, um.Host, model.ProfilePicPath)
-	model.CoverPicPath = entity.GetPath(um.Scheme, um.Host, model.CoverPicPath)
 
 	return &model, nil
 }
@@ -86,11 +83,18 @@ func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles [
 		media := []*Media{}
 
 		if user.ProfilePic != nil {
-			utils.DeleteStaticFile(user.ProfilePic.Name)
 			database.DB.Delete(&user.ProfilePic)
 		}
 
-		utils.UploadMultipleFiles(pfpFiles, &media)
+		mediaData, err := storage.UploadMultipleFiles(pfpFiles)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, data := range mediaData {
+			media = append(media, &Media{Name: data.Name, Mime: data.Mime, Url: data.Mime})
+		}
+
 		database.DB.CreateInBatches(&media, len(media))
 		database.DB.Model(&user).Association("ProfilePic").Append(&media)
 	}
@@ -99,11 +103,17 @@ func (um UserModel) UpdateUser(id, viewerId uint, model UserUpdateVM, pfpFiles [
 		media := []*Media{}
 
 		if user.CoverPic != nil {
-			utils.DeleteStaticFile(user.CoverPic.Name)
 			database.DB.Delete(&user.CoverPic)
 		}
 
-		utils.UploadMultipleFiles(coverFiles, &media)
+		mediaData, err := storage.UploadMultipleFiles(coverFiles)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, data := range mediaData {
+			media = append(media, &Media{Name: data.Name, Mime: data.Mime, Url: data.Mime})
+		}
 		database.DB.CreateInBatches(&media, len(media))
 		database.DB.Model(&user).Association("CoverPic").Append(&media)
 	}
@@ -141,9 +151,9 @@ func (um UserModel) ValidatePassword(id uint, password string) (bool, error) {
 //return auth token info and error if there is one
 func (um UserModel) Login(model UserLoginVm) (interface{}, error) {
 
-	user := User{}
+	user := User{Username: model.Username}
 
-	if err := database.DB.Preload("ProfilePic").Where("username = ?", model.Username).Find(&user).Error; err != nil {
+	if err := database.DB.Preload("ProfilePic").Find(&user).Error; err != nil {
 		return nil, err
 	}
 
@@ -163,14 +173,14 @@ func (um UserModel) Login(model UserLoginVm) (interface{}, error) {
 
 	ppp := ""
 	if user.ProfilePic != nil {
-		ppp = user.ProfilePic.GetPath(um.Scheme, um.Host)
+		ppp = user.ProfilePic.Url
 	}
 
 	data := map[string]interface{}{
 		"id":             user.ID,
 		"username":       user.Username,
-		"profilePicPath": ppp,
 		"token":          ts.AccessToken,
+		"profilePicPath": ppp,
 	}
 
 	return data, nil

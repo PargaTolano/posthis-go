@@ -29,7 +29,7 @@ const createFollow = async ( followedId ) => {
     const headers = authHeader();
     const options = { headers };
     
-    return requestWrapper(()=>axios.post(`follows-create/${followedId}`, options));
+    return requestWrapper(()=>axios.post(`follows-create/${followedId}`, {}, options));
 };
 
 /**

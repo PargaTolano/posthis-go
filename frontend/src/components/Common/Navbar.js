@@ -92,60 +92,59 @@ export const NavBar = ( props ) => {
   };
 
   return (
-      <div className={styles.navbar}>
+    <div className={styles.navbar}>
+      <div className={styles.content}>
+        <Link to={routes.feed}>
+          <img className={styles.logo} src= {Logo}/>
+          <img className={styles.logo} src= {LogoNominado}/>
+        </Link>
 
-        <div className={styles.content}>
-          <Link to={routes.feed}>
-            <img className={styles.logo} src= {Logo}/>
-            <img className={styles.logo} src= {LogoNominado}/>
+        <div className={styles.searchBar}>
+          <div className={styles.searchIcon}>
+            <SearchIcon />
+          </div>
+
+          <form className={styles.searchBarForm} onSubmit ={onSearch}>
+            <input
+              className={styles.searchBarInput}
+              ref={ref}
+              placeholder='Search…'
+              value={query}
+              onChange  ={onChange}
+            />
+          </form>
+          
+        </div>
+
+        <div className={styles.pfpFlex}>
+          <Link
+            className={styles.pfpContainer} 
+            to={routes.getProfile( authenticationService.currentUserValue.id ) }
+          >
+            <img 
+              className={styles.pfp} 
+              src={profilePicPath || profilePicPlaceholder}
+            />
           </Link>
 
-          <div className={styles.searchBar}>
-            <div className={styles.searchIcon}>
-              <SearchIcon />
-            </div>
-
-            <form className={styles.searchBarForm} onSubmit ={onSearch}>
-              <input
-                className={styles.searchBarInput}
-                ref={ref}
-                placeholder='Search…'
-                value={query}
-                onChange  ={onChange}
-              />
-            </form>
-            
-          </div>
-
-          <div className={styles.pfpFlex}>
-            <Link
-              className={styles.pfpContainer} 
-              to={routes.getProfile( authenticationService.currentUserValue.id ) }
-            >
-              <img 
-                className={styles.pfp} 
-                src={profilePicPath || profilePicPlaceholder}
-              />
-            </Link>
-
-            <div 
-              className={styles.dropDownIconContainer}
-              onClick={handleClick}
-            >
-              <ArrowDropDownIcon 
-                className={styles.dropDownIcon}
-              />
-            </div>
-            
-            <DropDownMenu
-              visible={dropDownVisible}
-              setVisible={setDropDownVisible}
+          <div 
+            className={styles.dropDownIconContainer}
+            onClick={handleClick}
+          >
+            <ArrowDropDownIcon 
+              className={styles.dropDownIcon}
             />
           </div>
+          
+          <DropDownMenu
+            visible={dropDownVisible}
+            setVisible={setDropDownVisible}
+          />
         </div>
-            
       </div>
+          
+    </div>
   );
-}
+};
 
 export default NavBar;

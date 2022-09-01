@@ -15,19 +15,19 @@ import {
 import { FormMediaGrid }          from 'components/Media';
 
 import { authenticationService }  from '_services';
+
 import { 
   fileToBase64,
-   validateCreateAndUpdatePost 
+  validateCreateAndUpdatePost 
 } from '_utils';
-import { createPost }             from '_api';
 
-import CPostModel     from '_model/CPostModel';
+import { createPost } from '_api';
+
+import CPostModel from '_model/CPostModel';
 
 import styles from '_styles/PostForm.module.css';
 
-export const CreatePostForm = (props) => {
-
-  const {afterUpdate} = props;
+export const CreatePostForm = ({afterUpdate}) => {
   
   const [images, setImages]   = useState( [] );
   const [content, setContent] = useState( '' );
@@ -59,15 +59,15 @@ export const CreatePostForm = (props) => {
   };
 
   const onChangeImage = async ( e )=>{
-    let { files } = e.target;
+    const { files } = e.target;
 
     if( images.length + files.length > 4 )
       return;
 
     const filePairs = [];
     for ( let i = 0; i < files.length; i++ ){
-      let file = files[i];
-      let preview = await fileToBase64( file );
+      const file = files[i];
+      const preview = await fileToBase64( file );
       filePairs.push( {
         file,
         preview

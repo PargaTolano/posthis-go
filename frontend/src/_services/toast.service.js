@@ -1,6 +1,6 @@
-import { ReplaySubject }  from 'rxjs';
+import { ReplaySubject, Subject }  from 'rxjs';
 
-const toastSubject = new ReplaySubject();
+const toastSubject = new Subject();
 
 export const toastService = {
     makeToast,

@@ -16,7 +16,7 @@ const getReposts = async (id) => requestWrapper(()=>axios.get(`reposts/${id}`));
 const createRepost = async ( userId, postId ) => {
     const headers = authHeader();
     const options = { headers };
-    return requestWrapper(()=>axios.post(`reposts-create/${userId}/${postId}`, options));
+    return requestWrapper(()=>axios.post(`reposts-create/${userId}/${postId}`, {}, options));
 };
 
 /**

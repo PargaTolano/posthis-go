@@ -2,7 +2,6 @@ package model
 
 import (
 	"posthis/database"
-	"posthis/entity"
 )
 
 type FollowModel struct {
@@ -28,8 +27,6 @@ func (fm FollowModel) GetFollows(id, viewerId uint) ([]FollowUserVM, error) {
 			&model.IsFollowed,
 		)
 
-		model.ProfilePicPath = entity.GetPath(fm.Scheme, fm.Host, model.ProfilePicPath)
-
 		models = append(models, model)
 	}
 	return models, nil
@@ -52,8 +49,6 @@ func (fm FollowModel) GetFollowing(id, viewerId uint) ([]FollowUserVM, error) {
 			&model.ProfilePicPath,
 			&model.IsFollowed,
 		)
-
-		model.ProfilePicPath = entity.GetPath(fm.Scheme, fm.Host, model.ProfilePicPath)
 
 		models = append(models, model)
 	}

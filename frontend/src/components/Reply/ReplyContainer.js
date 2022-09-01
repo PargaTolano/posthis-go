@@ -20,9 +20,7 @@ export const ReplyContainer = ({id}) => {
 
     return (
         <div className={styles.replyContainer}>
-            {
-                replies?.map((reply) => <ReplyCard  key={reply.replyID} id={id} reply={reply}/>)
-            }
+            {replies?.map(reply => <ReplyCard  key={reply.replyID} id={id} reply={reply}/>) }
         </div>
     )
 }

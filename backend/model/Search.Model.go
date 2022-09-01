@@ -3,7 +3,6 @@ package model
 import (
 	"errors"
 	"posthis/database"
-	"posthis/entity"
 	"posthis/viewmodel"
 	"strings"
 )
@@ -58,8 +57,6 @@ func (sm SearchModel) GetSearch(
 				&psmodel.IsLiked,
 				&psmodel.IsReposted)
 
-			psmodel.PublisherProfilePic = entity.GetPath(sm.Scheme, sm.Scheme, psmodel.PublisherProfilePic)
-
 			model.Posts = append(model.Posts, psmodel)
 		}
 		if !rows.NextResultSet() {
@@ -75,13 +72,13 @@ func (sm SearchModel) GetSearch(
 		database.DB.Preload("Media").Find(&posts, ids)
 
 		for i := range model.Posts {
-			for j := range posts[i].Media {
+			for _, media := range posts[i].Media {
 				model.Posts[i].Media = append(model.Posts[i].Media,
 					viewmodel.MediaVM{
-						ID:      posts[i].Media[j].ID,
-						Path:    posts[i].Media[j].GetPath(sm.Scheme, sm.Host),
-						Mime:    posts[i].Media[j].Mime,
-						IsVideo: strings.Contains(posts[i].Media[j].Mime, "video")})
+						ID:      media.ID,
+						Path:    media.Url,
+						Mime:    media.Mime,
+						IsVideo: strings.Contains(media.Mime, "video")})
 			}
 		}
 	}
@@ -102,8 +99,6 @@ func (sm SearchModel) GetSearch(
 				&umodel.ProfilePicPath,
 				&umodel.FollowerCount,
 				&umodel.FollowingCount)
-
-			umodel.ProfilePicPath = entity.GetPath(sm.Scheme, sm.Host, umodel.ProfilePicPath)
 
 			model.Users = append(model.Users, umodel)
 		}

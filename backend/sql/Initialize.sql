@@ -5,6 +5,12 @@ CREATE DATABASE posthis_local;
 
 USE posthis_local;
 
+-- SHOW CREATE TABLE media;
+
+-- select*from media;
+-- select*from posts;
+-- select*from users;
+
 DROP PROCEDURE IF EXISTS SP_GET_PROFILE;
 DELIMITER $$
 CREATE PROCEDURE SP_GET_PROFILE
@@ -18,18 +24,18 @@ BEGIN
 		u.username				username,
         u.tag					tag,
         u.email					email,
-        COALESCE(m1.name,'') 	profilepicpath,
-        COALESCE(m2.name,'')	coverpicpath,
-        COUNT(DISTINCT f1.id) 			followerCount,
-        COUNT(DISTINCT f2.id)			followingCount,
+        COALESCE(m1.url,'') 	profilepicpath,
+        COALESCE(m2.url,'')		coverpicpath,
+        COUNT(DISTINCT f1.id) 	followerCount,
+        COUNT(DISTINCT f2.id)   followingCount,
 		f3.id IS NOT NULL 		isFollowed
 	FROM users u
     LEFT JOIN follows f1 ON f1.followed_id = in_id
     LEFT JOIN follows f2 ON f2.follower_id = in_id
     LEFT JOIN follows f3 ON f3.followed_id = in_id AND f3.follower_id = in_viewer_id
-    LEFT JOIN media m1 ON u.id = m1.owner_id AND m1.owner_type = 'profilepicuser'
-    LEFT JOIN media m2 ON u.id = m2.owner_id AND m2.owner_type = 'coverpicuser'
-	WHERE u.id = in_id and u.deleted_at IS NULL
+    LEFT JOIN media m1 ON u.id = m1.profile_pic_owner_id
+    LEFT JOIN media m2 ON u.id = m2.cover_pic_owner_id
+	WHERE u.id = in_id AND u.deleted_at IS NULL
     GROUP BY u.id;
 END $$
 DELIMITER ;
@@ -46,11 +52,11 @@ BEGIN
 		u.id 												id,
 		u.username											username,
         u.tag												tag,
-        COALESCE(m.name,'') 								profilepicpath,
+        COALESCE(m.url,'') 								profilepicpath,
 		MAX( COALESCE( f2.id <> in_viewer_id, FALSE )) > 0  isFollowed
 	FROM 		users u
     JOIN		follows f 	ON f.follower_id  = u.id AND f.followed_id = in_id
-    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicuser'
+    LEFT JOIN 	media	m 	ON m.profile_pic_owner_id = u.id
     LEFT JOIN 	follows f2 	ON f2.follower_id = in_viewer_id
     GROUP BY u.id;
 END $$
@@ -68,11 +74,11 @@ BEGIN
 		u.id 								id,
 		u.username							username,
         u.tag								tag,
-        COALESCE(m.name,'') 				profilepicpath,
+        COALESCE(m.url,'') 				profilepicpath,
 		MAX( COALESCE( f2.id <> in_viewer_id, FALSE )) > 0  isFollowed
 	FROM 		users u
     JOIN		follows f 	ON f.followed_id  = u.id AND f.follower_id = in_id
-    LEFT JOIN 	media	m 	ON m.owner_id = u.id AND m.owner_type = 'profilepicuser'
+    LEFT JOIN 	media	m 	ON m.profile_pic_owner_id = u.id
     LEFT JOIN 	follows f2 	ON f2.follower_id = in_viewer_id
     GROUP BY u.id;
 END $$
@@ -93,7 +99,7 @@ BEGIN
 		u1.id 								PublisherID,
         u1.username							PublisherUserName,
         u1.tag      						PublisherTag,
-        COALESCE(m.name, '')				PublisherProfilePic,
+        COALESCE(m.url, '')				PublisherProfilePic,
 		'' 									ReposterUsername,
         ''									ReposterTag,
 		p.created_at 						Date,
@@ -106,13 +112,13 @@ BEGIN
 		MAX( COALESCE( r2.id, FALSE )) > 0	IsReposted
     FROM posts p
     JOIN users u1 ON p.owner_id = u1.id AND u1.deleted_at IS NULL
-	LEFT JOIN media    m  ON m.owner_id = u1.id AND m.owner_type='profilepicuser'
+	LEFT JOIN media    m  ON m.profile_pic_owner_id = u1.id
     LEFT JOIN likes    l  ON  l.post_id = p.id
     LEFT JOIN replies ry  ON ry.post_id = p.id
     LEFT JOIN reposts  r  ON  r.post_id = p.id
     LEFT JOIN likes   l2  ON p.id  = l2.post_id AND l2.user_id = in_viewer_id
     LEFT JOIN reposts r2  ON p.id  = r2.post_id AND r2.user_id = in_viewer_id
-    WHERE p.id = in_id AND p.deleted_at IS NULL
+    WHERE p.id = in_id
     GROUP BY p.id;
 	
 END $$
@@ -135,11 +141,11 @@ BEGIN
 		u1.id 												PublisherID,
         u1.username											PublisherUserName,
         u1.tag      										PublisherTag,
-        COALESCE(m.name, '')								PublisherProfilePic,
+        COALESCE(m.url, '')								PublisherProfilePic,
 		ry.created_at 										Date
     FROM replies ry
     JOIN users u1 ON ry.user_id = u1.id AND u1.deleted_at IS NULL
-	LEFT JOIN media m  ON m.owner_id = u1.id AND m.owner_type='profilepicuser'
+	LEFT JOIN media m  ON m.profile_pic_owner_id = u1.id
     WHERE ry.post_id = in_id
     GROUP BY ReplyID
     ORDER BY Date;
@@ -190,7 +196,7 @@ BEGIN
 		u1.id 																										PublisherID,
         u1.username																									PublisherUserName,
         u1.tag      																								PublisherTag,
-        COALESCE(m.name, '')																						PublisherProfilePic,
+        COALESCE(m.url, '')																						PublisherProfilePic,
 		COALESCE(u2.username, '') 																					ReposterUsername,
         COALESCE(u2.tag, '')																						ReposterTag,
 		IF( p.id = rids.id, r.created_at, p.created_at) 			 												Date,
@@ -209,14 +215,13 @@ BEGIN
     LEFT JOIN likes   l 				ON l.post_id 	= p.id		 AND l.user_id = in_id
     LEFT JOIN likes   l2 				ON l2.post_id 	= p.id
     LEFT JOIN replies ry 				ON ry.post_id 	= p.id
-	LEFT JOIN media   m  				ON m.owner_id 	= u1.id 	 AND m.owner_type = 'profilepicuser'
+	LEFT JOIN media   m  				ON m.profile_pic_owner_id = u1.id
     LEFT JOIN reposts r 				ON p.id 		= r.post_id  AND r.user_id != in_id
     LEFT JOIN reposts r2 				ON p.id 		= r2.post_id AND r2.user_id = in_id
     LEFT JOIN reposts r3 				ON p.id 		= r3.post_id
     LEFT JOIN users   u2 				ON r.user_id 	= u2.id
     LEFT JOIN temp_REPOSTED_IDS rids 	ON rids.id 		= p.id
     LEFT JOIN temp_FOLLOWED_IDS fids 	ON fids.id 		= u1.id OR fids.id = u2.id
-    WHERE p.deleted_at IS NULL
     GROUP BY p.id
     ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
     LIMIT in_offset, in_limit;
@@ -287,7 +292,7 @@ BEGIN
 		u1.id 																										PublisherID,
         u1.username																									PublisherUserName,
         u1.tag      																								PublisherTag,
-        COALESCE(m.name, '')																						PublisherProfilePic,
+        COALESCE(m.url, '')																						PublisherProfilePic,
 		COALESCE(u2.username, '') 																					ReposterUsername,
         COALESCE(u2.tag, '')																						ReposterTag,
 		IF( p.id = rids.id, r.created_at, p.created_at) 			 												Date,
@@ -306,14 +311,14 @@ BEGIN
     LEFT JOIN likes   l 				ON l.post_id 	= p.id		 AND l.user_id = in_id
     LEFT JOIN likes   l2 				ON l2.post_id 	= p.id
     LEFT JOIN replies ry 				ON ry.post_id 	= p.id
-	LEFT JOIN media   m  				ON m.owner_id 	= u1.id 	 AND m.owner_type = 'profilepicuser'
+	LEFT JOIN media   m  				ON m.profile_pic_owner_id = u1.id
     LEFT JOIN reposts r 				ON p.id 		= r.post_id  AND r.user_id != in_id
     LEFT JOIN reposts r2 				ON p.id 		= r2.post_id AND r2.user_id = in_id
     LEFT JOIN reposts r3 				ON p.id 		= r3.post_id
     LEFT JOIN users   u2 				ON r.user_id 	= u2.id
     LEFT JOIN temp_REPOSTED_IDS rids 	ON rids.id 		= p.id
     LEFT JOIN temp_FOLLOWED_IDS fids 	ON fids.id 		= u1.id OR fids.id = u2.id
-    WHERE IF( p.id = rids.id , u2.id, u1.id) = in_poster_id  AND p.deleted_at IS NULL
+    WHERE IF( p.id = rids.id , u2.id, u1.id) = in_poster_id
     GROUP BY p.id
     ORDER BY Date DESC, IsFollowedRepost desc, IsFollowedPost desc
     LIMIT in_offset, in_limit;
@@ -368,7 +373,7 @@ BEGIN
 		u.id 																											PublisherID,
 		u.username 																										PublisherUserName,
         u.tag      																										PublisherTag,
-        COALESCE( m.name, '')																							PublisherProfilePic,
+        COALESCE( m.url, '')																							PublisherProfilePic,
         p.created_at																									Date,
         COUNT(DISTINCT l.id)																							LikeCount,
         COUNT(DISTINCT ry.id)																							ReplyCount,
@@ -377,13 +382,13 @@ BEGIN
         MAX( COALESCE( r2.id, FALSE)) > 0  IsReposted
 	FROM posts p
 	JOIN users u 			ON p.owner_id = u.id
-    LEFT JOIN media m 		ON u.id = m.owner_id AND m.owner_type = 'profilepicuser'
+    LEFT JOIN media m 		ON u.id = m.profile_pic_owner_id
     LEFT JOIN likes l 		ON l.post_id  = p.id
     LEFT JOIN likes l2 		ON l2.post_id = p.id AND l2.user_id = in_viewer_id
     LEFT JOIN replies ry 	ON ry.post_id = p.id
     LEFT JOIN reposts r		ON r.post_id  = p.id
     LEFT JOIN reposts r2	ON r2.post_id = p.id AND r2.user_id = in_viewer_id
-    WHERE p.content LIKE CONCAT('%', in_query,'%') AND p.deleted_at IS NULL
+    WHERE p.content LIKE CONCAT('%', in_query,'%')
     GROUP BY p.id
     ORDER BY Date
     LIMIT in_offset, in_limit;
@@ -418,11 +423,11 @@ BEGIN
 		u.id 							ID,
         u.tag 							Tag,
         u.username 						UserName,
-        COALESCE( m.name, '') 			ProfilePicPath,
+        COALESCE( m.url, '') 			ProfilePicPath,
 		COUNT(DISTINCT f1.id)			FollowerCount,
 		COUNT(DISTINCT f2.id)			FollowingCount
 	FROM users u
-    LEFT JOIN media m ON u.id = m.owner_id AND m.owner_type = 'profilepicuser'
+    LEFT JOIN media m ON u.id = m.profile_pic_owner_id
     LEFT JOIN follows f1 ON f1.followed_id = u.id
     LEFT JOIN follows f2 ON f2.follower_id = u.id
     WHERE ( u.username LIKE CONCAT('%', in_query,'%') OR  u.tag LIKE CONCAT('%', in_query,'%') ) AND u.deleted_at IS NULL
